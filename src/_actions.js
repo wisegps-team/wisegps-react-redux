@@ -13,7 +13,7 @@ export const ACT ={
         GETED_CARS:'GETED_CARS'
     },
     'const':{
-        all:'ALL'
+        all:'ALL1'
     },
     fun:{
         addSelect:function (user_id) {
