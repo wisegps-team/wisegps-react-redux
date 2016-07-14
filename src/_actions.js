@@ -10,7 +10,7 @@ export const ACT ={
         SHOW_CARS:'SHOW_CARS',
         GET_USERS:'GET_USERS',
         GET_CARS:'GET_CARS',
-        GETED_USERS:'GETED_USERS',//hi
+        GETED_USERS:'GETED_USERS',
         GETED_CARS:'GETED_CARS'
     },
     'const':{
