@@ -1,0 +1,760 @@
+<!--
+	作者：小吴
+	时间：2015-11-17
+	描述：登录注册忘记密码
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+
+		<title>叭叭</title>
+		<script src="wslib/WiStorm.js"></script>
+		<script>link("W.css")</script>
+		<script src="wslib/api/newWapi.js"></script>
+	</head>
+	<style>
+		body{background-color:#fff}.mui-input-row{border:1px solid #e1e1e1;border-radius:4px;margin-bottom:1em;box-shadow:0 0 6px rgba(105,192,226,0);-webkit-transition:box-shadow .3s;transition:box-shadow .3s;line-height:38px}.mui-input-row>label{width:auto;background:#f7f7f7;border-right:1px solid #e0e0e0;position:absolute;left:0;top:0}.mui-input-row>input{height:100%;font-size:14px;padding-left:4.5em}.mui-input-row.active{border:1px solid #78d6fb;box-shadow:0 0 6px rgba(105,192,226,0.61)}.mui-input-group{padding:1.5em .5em;margin-top:1em}.mui-input-group:before{display:none}.mui-input-group .mui-input-row:after{display:none}.right{text-align:right;font-size:14px}a{color:#61bde1}.mui-content{padding:1em}.has_nav{padding:44px 1em 1em 1em;overflow-y:auto}.child_view{position:fixed}.mui-icon,.w_icon{font-size:18px}.text{color:#ccc;text-align:center;font-size:12px}.but{background:#ddd;line-height:2em;text-align:center;border-radius:4px;color:#fff;padding:0 .8em;margin:0 .5em;display:inline-block}.t_left{text-align:left;padding-left:18px}.sms{float:right;margin:0 0 0 .5em;line-height:40px;height:40px;vertical-align:top}.but.sms.fromSmall{border-radius:20px;width:40px}.w_icon{color:#333}#register_form{padding-top:0}.mui-radio{text-align:center;line-height:40px;margin-bottom:5px}.mui-radio label{display:inline;padding-right:.5em}.mui-radio input[type=radio]{position:static;display:inline}.mui-radio input[type=radio]:before{font-size:20px}
+		.back_login{
+			font-size: 14px;line-height: 24px;display: inline-block;vertical-align: bottom;
+		}
+	</style>
+	<body>
+		<script>
+			var pwd = W.getSetting("pwd");
+			var account=W.getSetting("account");
+			var openId = _g.openid;
+			var cust_type=2;//用户类型，[0：无车]，[1：车主]，[2：服务商]，[3：员工]
+			if(openId){
+				W.setCookie("__login_redirect_uri__","");
+			}	
+			function success(json){
+				var user=W.getSetting("user");
+				var login_url=W.getCookie("__login_redirect_uri__");
+				W.setCookie("__login_redirect_uri__","");
+				var successUrl="src/home.html";
+				if(user.cust_type==1){
+					successUrl="src/baba/air_home.html";
+				}else if(user.cust_type==4){
+					successUrl="src/distributor/home.html";
+				}
+				top.location=login_url||successUrl;
+			}
+			
+			function loginSuccess(json) {
+				if (json.status_code&&json.status_code!='0'&&json.status_code!=0) {
+					W.loading();
+					if(json.status_code<3){
+						W.alert("账号不存在或密码错误");
+						return;
+					}else
+						W.errorCode(json);
+				} else if(json.cust_id){
+					if(pwd&&account){
+						W.setSetting("pwd",pwd);
+						W.setSetting("account",account);
+					}
+					W.setCookie("access_token", json.access_token,1);
+					Wapi.user.get(function(res) {
+						W.loading();
+						if (res.status_code) {
+							W.alert("错误码："+res.status_code+"；获取用户信息失败");
+							W.loading();
+							return;
+						} else {
+							W._loginSuccess(res);
+							success(res);
+						}
+					}, {
+						cust_id: json.cust_id,
+						access_token: json.access_token
+					});
+				}else{
+					W.loading();
+				}
+			}
+			
+			function bind(json){//微信登录绑定账号返回
+				W.loading();
+				if (json.status_code) {
+					W.errorCode(json);
+					return;
+				} else {
+					W.alert("绑定成功，可以正式使用了", function() {
+						var login_url=W.getCookie("__login_redirect_uri__");
+						top.location=login_url||"src/home.html";
+					});
+				}
+			}
+			//微信登录
+			if (WiStorm.agent.weixin&&_g.intent!="forget"&&_g.intent!="logout") {
+				if (_g.sso_login) {
+					W.loading(true);
+					if (!_g.access_token) {
+						if (_g.status_code == 1) {
+							W.loading();
+							if(_g.intent!="register"){
+								W.alert("您当前是第一次授权，请进行普通登录绑定账号，或注册一个新账号");
+								W("header>.mui-title").innerText = "绑定账号";
+								W("#login_but").innerText = "绑定叭叭账号";
+								success=function(data){
+									Wapi.user.update(bind,{"login_id":openId,"cust_id":data.cust_id,"access_token":W.getCookie("access_token")});
+								}
+							}
+						}else{
+							W.loading();
+							W.alert(_g.err_msg+"第三方登录错误。错误码："+_g.status_code);
+						}
+					} else {
+						if(_g.cust_id)//登录成功
+							loginSuccess(_g);
+					}
+				} else { //微信下跳转授权页面
+					W.wxLogin();	
+				}
+			}
+		</script>
+		<header class="mui-bar mui-bar-nav noshadow">
+			<h1 class="mui-title">用户登录</h1>
+		</header>
+		<div class="mui-content">
+			<form class="mui-input-group" id="login_form">
+				<div class="text t_left">已有叭叭账号？</div>
+				<div class="mui-input-row">
+					<input type="text" placeholder="请输入手机" name="account">	
+					<label><span class="w_icon icon_merchant"></label>
+				</div>
+				<div class="mui-input-row" style="margin-bottom: .5em;">
+					<input type="password" placeholder="请输入密码" name="pwd">
+					<label><span class="w_icon icon_password"></span></label>
+				</div>
+				<div class="right">
+					<a href="src/temp_user.html?intent=logout&needUser=true">绑定已有帐号</a> |
+					<a data-show="register">注册新账号</a> |
+					<a data-show="forget">忘记密码</a>
+				</div>
+				<button type="button" class="mui-btn mui-btn-block w" id="login_but">登录</button>
+			</form>
+		</div>
+		<div class="child_view has_nav hide" id="register">
+			<div class="mui-bar mui-bar-nav noshadow">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left W_back"><span class='back_login'>登录</span></a>
+				<h1 class="mui-title">用户注册</h1>
+			</div>
+			<form class="mui-input-group" id="register_form">
+				<div class="mui-radio" style="text-align: center;line-height: 40px;margin-bottom: 5px;" id="cust_type">
+					<label>商户</label><input type="radio" name="cust_type" value="2" checked="checked">
+					<label style="padding-left: 2em;">员工</label><input type="radio" name="cust_type" value="3">	
+				</div>
+				<div class="mui-input-row">
+					<input type="text" placeholder="手机号码" name="mobile">	
+					<label><span class="w_icon icon_user"></label>
+				</div>
+				<span class="but sms send" data-type = "1">获取验证码</span>
+				<div class="mui-input-row">
+					<input type="text" placeholder="短信验证码" name="valid_code">	
+					<label><span class="w_icon icon_sms"></label>
+				</div>
+				<div class="mui-input-row">
+					<input type="text" placeholder="店铺名称" name="cust_name">	
+					<label><span class="w_icon icon_store_management"></label>
+				</div>
+				<div class="mui-input-row" style="display: none;">
+					<input type="text" placeholder="商户手机号" name="seller_mobile">	
+					<label><span class="w_icon icon_store_management"></label>
+				</div>
+				<div class="mui-input-row">
+					<input type="password" placeholder="密码" name="password">
+					<label><span class="w_icon icon_password"></span></label>
+				</div>
+				<div class="mui-input-row" style="margin-bottom: .2em;">
+					<input type="password" placeholder="重复密码" name="repwd">
+					<label><span class="w_icon icon_password"></span></label>
+				</div>
+				<div class="text">密码长度6~12位、可以是数字、大小写英文字母</div>
+				<button type="button" class="mui-btn mui-btn-block w">注册</button>
+			</form>
+				<div class="text">点击上面的注册按钮，即表示同意<a>叭叭软件许可</a>和<a>服务条款</a></div>
+				<div class="text">
+					如果您已拥有叭叭账户，则可在此<span class="but" data-show="login">登录</span>
+				</div>
+		</div>
+		<div class="child_view has_nav hide" id="forget">
+			<div class="mui-bar mui-bar-nav noshadow">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left W_back"></a>
+				<h1 class="mui-title">找回密码</h1>
+			</div>
+			<form class="mui-input-group" id="forget_form">
+				<div class="mui-input-row">
+					<input type="text" placeholder="手机号码" name="mobile">	
+					<label><span class="w_icon icon_user"></label>
+				</div>
+				<span class="but sms send" data-type = "2">获取验证码</span>
+				<div class="mui-input-row" style="margin-bottom: 2.5em;">
+					<input type="text" placeholder="短信验证码" name="valid_code" data-r="forget">	
+					<label><span class="w_icon icon_sms"></label>
+				</div>
+				<button type="button" class="mui-btn mui-btn-block w" disabled="disabled">下一步</button>
+			</form>
+		</div>
+		<div class="child_view has_nav hide" id="setPwd">
+			<div class="mui-bar mui-bar-nav noshadow">
+				<h1 class="mui-title">设置新密码</h1>
+			</div>
+			<form class="mui-input-group" id="setPwd_form">
+				<div class="text t_left">请设置新登录密码</div>
+				<div class="mui-input-row">
+					<input type="password" placeholder="密码" name="password">
+					<label><span class="w_icon icon_password"></span></label>
+				</div>
+				<div class="mui-input-row" style="margin-bottom: 2.5em;">
+					<input type="password" placeholder="重复密码" name="repwd">
+					<label><span class="w_icon icon_password"></span></label>
+				</div>
+				
+				<button type="button" class="mui-btn mui-btn-block w">重置密码</button>
+			</form>
+		</div>
+	</body>
+	<script for="login">
+		W.dom.login_f=W("#login_form");
+		var rf=W.dom.register_f=W("#register_form");
+		W.dom.showBut=W("[data-show]",1);
+		var _temId="";
+		for(var i=W.dom.showBut.length-1;i>=0;i--){
+			W.dom.showBut[i].addEvent("click",show);
+			_temId=W.dom.showBut[i].getAttribute("data-show");
+			W.dom[_temId]=W("#"+_temId);
+		}
+		delete _temId;
+		
+		if(_g.type=="user"){
+			rf.querySelector(".w_icon.icon_store_management").className="w_icon icon_merchant";
+			rf.querySelector("[name='cust_name']").placeholder="用户名";
+			W("#cust_type").style.display="none";
+			rf.style.paddingTop="1.5em";
+			W.setCookie("__login_redirect_uri__","src/baba/air_home.html",-30);
+			cust_type=1;
+		}
+		//如果意图是忘记密码，则弹出忘记密码view
+		if(_g.intent=="forget"){
+			W("#forget").classList.remove("hide");
+			W("#forget").querySelector(".W_back").addEvent("click",function(){
+				plus.webview.currentWebview().parent().evalJS('W.dom.nav.style.display="block";');
+			})
+		}else if(_g.intent=="register"){
+			show.call(W("[data-show='register']"));
+			if(_g.type=="user"){
+				W.setCookie("__login_redirect_uri__","src/baba/my_car.html",-60);
+			}
+		}
+		
+		//如果非微信环境并且没有意图，则自动登录
+		if(!WiStorm.agent.weixin&&account&&pwd&&!_g.intent){
+			W.dom.login_f.querySelector("[name='account']").value=account;
+			W.dom.login_f.querySelector("[name='pwd']").value=pwd;
+			login();
+		}
+		
+		function showView(id){
+			if(W.dom.show)
+				W.dom.show.className="child_view has_nav toRight";
+			var target=W.dom[id];
+			if(target)
+				target.className="child_view has_nav fromRight";
+			W.dom.show=target;
+		}
+		
+		function show(){
+			var id=this.getAttribute("data-show");
+			showView(id);
+			
+			if(id!=location.href.split("/").pop())
+				history.pushState(null,id,id);
+		}
+		
+		
+	
+		W.dom.input=W("input",1);
+		for(var i=W.dom.input.length-1;i>=0;i--){
+			W.dom.input[i].addEvent("focus",focus);
+			W.dom.input[i].addEvent("blur",blur);
+		}
+		function focus(){
+			this.parentElement.classList.add("active");
+		}
+		function blur(){
+			this.parentElement.classList.remove("active");
+		}
+		
+		//登录
+		W("#login_but").addEvent("click",login);
+		//监听地址变化，切换view
+		window.addEventListener("popstate",function(){
+			var id=location.href.split("/").pop();
+			showView(id);
+		});
+		
+		
+		function login(){
+			//获取用户输入
+			var form=W.dom.login_f;
+			account=form.querySelector("[name='account']").value;
+			pwd=form.querySelector("[name='pwd']").value;
+			
+			if(!(account&&pwd)){
+				W.alert("手机号和密码不能为空");
+				return;
+			}
+			var data={
+				account: account,
+			    password: pwd
+			}
+			W.loading(true);
+			Wapi.user.login(loginSuccess,data);
+		}
+	</script>
+	<script for="register">
+		W.dom.rb=rf.querySelector("button").addEvent("click",register);
+		W.dom.sms_b=rf.querySelector(".but.sms.send").addEvent("click",getSMS);
+		W.dom.mi=rf.querySelector("[name=mobile]").addEvent("keyup",checkMobile);
+		W.dom.ni=rf.querySelector("[name=cust_name]").addEvent("change",checkName);
+		W.dom.ci=rf.querySelector("[name=valid_code]").addEvent("change",checkCode);
+		W.dom.rp=rf.querySelector("[name=password]").addEvent("keyup",chenckPwd);
+		W.dom.rep=rf.querySelector("[name=repwd]").addEvent("keyup",chenckPwd);
+		rf.querySelector("[value='2'][type='radio']").addEvent("change",changeType);
+		rf.querySelector("[value='3'][type='radio']").addEvent("change",changeType);
+		W.dom.sm=rf.querySelector("[name=seller_mobile]").addEvent("keyup",chenckSeller);
+		W.dom.sms_b.status="checkMobile";
+		
+		//商户类型更改
+		function changeType(){
+			if(this.value==3){
+				W.dom.ni.placeholder="用户名";
+				W.dom.ni.nextElementSibling.querySelector("span").className="w_icon icon_merchant";
+				W.dom.sm.parentElement.style.display="block";
+				var p1 = W.dom.sm._err;
+				if(p1){
+					p1.style.display="block";
+				}
+				cust_type=3;
+			}else{
+				W.dom.ni.nextElementSibling.querySelector("span").className="w_icon icon_store_management";
+				W.dom.ni.placeholder="店铺名称";
+				W.dom.sm.parentElement.style.display="none";
+				var p1 = W.dom.sm._err;
+				if(p1){
+					p1.style.display="none";
+				}
+				cust_type=2;
+			}
+		}
+		
+		//检测商户是否存在
+		function chenckSeller(){
+			var v=W.trim(this.value);
+			if(v.length!=11||v.match(/\D/)){
+				if(!this._err||!this._err._iserr)
+					addErr(this);
+				return;
+			}
+			var op={
+				fields:'cust_id,login_id'
+			}
+			Wapi.user.list(function(res){
+				if(res.data.length>0){
+					addTally(W.dom.sm);
+					chenckSeller.pass=2;
+					chenckSeller.open_id=res.data[0].login_id;
+				}else{
+					addErr(W.dom.sm,true);
+				}
+			},{mobile:v},op);
+		}
+		
+		//检测手机是否已注册
+		function checkMobile(){
+			var v=W.trim(this.value);
+			if(v.length!=11||v.match(/\D/)){
+				if(!this._err||!this._err._iserr)
+					addErr(this);
+				return;
+			}
+			W.dom.sms_b.status="checkMobile";
+			Wapi.user.checkExists(function(json){
+				if(json.exist){
+					W.alert("该手机已经注册，您可以直接登录或修改密码");
+					checkMobile.pass=1;
+					addErr(W.dom.mi);
+				}else{
+					addTally(W.dom.mi);
+					checkMobile.pass=2;
+					checkEverything(true);
+					W.dom.sms_b.status=false;
+					W.dom.sms_b.style.background="#5cb85c";
+				}
+			},{mobile:v});
+		}
+		
+		//发送验证码
+		function getSMS(){
+			if(this.status){
+				if(this.status=="checkMobile")
+					W.toast("请等待手机号码验证");
+				else
+					W.toast("如果没有收到短信，请一分钟后再点击");
+				return;
+			}
+			var type=this.getAttribute("data-type");
+			var mobile=W.trim(this.parentElement.querySelector("[name=mobile]").value);
+			this.status=true;
+			checkCode.mobile=mobile;
+			var but=this;
+			but.innerText="已发送";
+			but.style.background="#ccc";
+			Wapi.comm.sendSMS(function(json){
+				if(json.status_code){
+					W.alert(json.msg+";"+json.err_msg);
+					but.status=false;
+					but.innerText="获取验证码";
+					but.style.background="#5cb85c";
+				}else{
+					but.innerText="已发送";
+					but.style.background="#ccc";
+					but.status=true;
+					
+					but.time=60;
+					var timeFun=function(){
+						but.time--;
+						if(but.time<=0){
+							but.innerText="获取验证码";
+							but.style.background="#5cb85c";
+							but.status=false;
+						}else{
+							but.innerText=but.time;
+							but.id=setTimeout(timeFun,1000);
+						}
+					}
+					but.id=setTimeout(timeFun,1000);
+				}
+			},mobile,type);
+		}
+		
+		//检测用户名是否存在
+		function checkName(){
+			var v=W.trim(this.value);
+			if(!v){
+				addErr(W.dom.ni);
+				return;
+			}
+			Wapi.user.checkExists(function(json){
+				if(json.exist){
+					W.toast("该名称已经被注册");
+					checkName.pass=1;
+					addErr(W.dom.ni);
+				}else{
+					addTally(W.dom.ni);
+					checkName.pass=2;
+					checkEverything(true);
+				}
+			},{cust_name:v});
+		}
+		
+		//检测验证码是否正确
+		function checkCode(){
+			var v=W.trim(this.value);
+			if(v.length!=4)
+				return;
+			var data={
+				valid_type:1,
+   				valid_code:v,
+   				mobile:checkCode.mobile
+			}
+			var codeInput=this;
+			Wapi.comm.validCode(function(json){
+				if(json.status_code){
+					W.alert(json.msg);
+					addErr(codeInput);
+					codeInput.pass=1;
+				}else{
+					if(json.valid){
+						codeInput.pass=2;
+						addTally(codeInput);
+						
+						if(codeInput.dataset.r=='forget')
+							W.dom.fb.disabled=false;
+						else
+							checkEverything(true);
+					}else{
+						addErr(codeInput);
+						codeInput.pass=1;
+					}
+				}
+			},data);
+		}
+		
+		function chenckPwd(){
+			var f=W.parents(this,2);
+			var P=f.querySelector("[name=password]");
+			var REP=f.querySelector("[name=repwd]");
+			var rep=REP.value;
+			var p=P.value;
+			if(p.length<6||p.length>12){
+				P.pass=1;
+				addErr(P);
+				return;
+			}else if(p.match(/\W/)){
+				P.pass=1;
+				addErr(P);
+				W.toast("密码不应该包含特殊字符");
+				return;
+			}else {
+				P.pass=2;
+				addTally(P);
+			}
+				
+			if(rep==p){
+				REP.pass=2;
+				addTally(REP);
+			}else{
+				REP.pass=1;
+				addErr(REP);
+			}
+		}
+
+		function addTally(dom, b) {
+			var p = dom._err;
+			if (p){
+				if(p._iserr==b)
+					return;
+				else
+					p.parentElement.removeChild(p);
+			}
+			var tem=document.createElement("span");
+			tem.className="but sms fromSmall";
+			if(b){
+				tem.innerHTML="&#10008";
+				tem.style.background="#d9534f";
+				tem._iserr=b;
+			}else{
+				tem.innerHTML="ok";
+				tem.style.background="#5cb85c";
+				tem.style.padding="0";
+			}
+			dom._err=tem;
+			dom.parentElement.parentElement.insertBefore(tem,dom.parentElement);
+		}
+		function addErr(dom){
+			addTally(dom,true);
+		}
+		
+		function registerSuccess(res){//更新完用户名，和微信登录id才算注册成功
+			if(res.status_code){
+				W.loading();
+				W.errorCode(res);
+				return;
+			}else{
+				W.loading();
+				W.alert("注册成功，请登录");
+				W.dom.register_f.reset();
+				W.back();
+			}
+		}
+		
+		//检查各项数据是否已通过验证
+		function checkEverything(noAlert){
+			var txt;
+			if(checkMobile.pass!=2){
+				txt="该手机号已被注册";
+			}else if(cust_type==2&&checkName.pass!=2){
+				txt="该名称已被注册";
+			}else if(cust_type==3&&chenckSeller.pass!=2){
+				txt="商户手机未注册或非商户";
+			}else if(W.dom.ci.pass!=2){
+				txt="手机验证码不正确";
+			}else if(W.dom.rp.pass!=2){
+				txt="密码格式不正确";
+			}else if(W.dom.rep.pass!=2){
+				txt="两次输入密码不相同";
+			}
+
+			if(txt){
+				if(!noAlert)
+					W.alert(txt);
+				return false;
+			}
+			return true;
+		}
+		
+		//验证并注册
+		function register(){
+			if(!(W.dom.mi.value&&W.dom.ni.value&&W.dom.ci.value&&W.dom.rp.value)){
+				W.alert("各项均不能为空!");
+				return;
+			}
+			if(!checkEverything()){
+				return;
+			}
+			var reg_data={
+				mobile:W.dom.mi.value,
+				valid_code:W.dom.ci.value,
+				password:W.dom.rp.value,
+				valid_type:1
+			}
+			if(openId&&_g.access_token&&!_g.cust_id){//说明是游戏用户但是没有正式注册
+				reg_data.login_id=openId;
+			}
+			if(cust_type==3){//员工注册，并不马上注册
+				reg_data.cust_type=3;
+				reg_data.cust_name=W.dom.ni.value;
+				if(openId){
+					reg_data.login_id=openId;
+					reg_data.logo=_g.headimgurl;
+				}
+				var account_url=WiStorm.root+"src/child_account.html?newAccount="+encodeURIComponent(JSON.stringify(reg_data));
+				var params={
+					from:"WiCARE子帐号确认",
+					content:"用户名称："+reg_data.cust_name+"，手机号码："+reg_data.mobile+"，请求成为您的员工子帐号，请您确认。",
+					remark:"进入详情核实资料。",
+					open_id:chenckSeller.open_id,
+					link:account_url
+				}
+				Wapi.comm.sendWeixin(function(res){
+					if(res.errcode){
+						W.alert('发送推送错误，请重试；错误码：'+res.errcode);
+						return;
+					}
+					W.alert("当前请求已经推送给了您的商户，请等待商户确认之后重新进入商户入口");
+					W.dom.rb.setAttribute("disabled","disabled");
+				},params);
+				return;
+			}
+			W.loading("注册中...请稍候");
+			pwd = reg_data.password;
+			account=reg_data.mobile;
+			Wapi.user.register(function(json){
+				if(json.status_code){
+					W.loading();
+					W.errorCode(json);
+					return;
+				}else{
+					Wapi.user.login(function(res){//先调用登录接口获取到access_token才能更新其他信息
+						if(res.status_code){
+							W.loading();
+							W.errorCode(res);
+							return;
+						}
+						var data={
+							access_token: res.access_token,
+							_cust_id:res.cust_id,
+							cust_name:W.dom.ni.value,
+							cust_type:1,
+							seller_id:res.cust_id
+						}
+						if(_g.seller_id){
+							data.seller_id=_g.seller_id;
+						}
+						if(openId){
+							data.login_id=openId;
+							data.logo=_g.headimgurl;
+							data.sex=_g.sex;
+							data.province=_g.province;
+							data.city=_g.city;
+						}
+						Wapi.user.update(registerSuccess,data);//更新用户名等资料
+					},{account: account,password: pwd});
+				}
+			},reg_data);
+		}
+	</script>
+	<script for="foeget">
+		var ff=W.dom.ff=W("#forget_form");
+		var sf=W.dom.sf=W("#setPwd_form");
+		
+		function checkMobi(){//检测是否已经注册过，没注册过不让发送短信
+			var v=W.trim(this.value);
+			if(v.length!=11||v.match(/\D/)){
+				if(!this._err||!this._err._iserr)
+					addErr(this);
+				return;
+			}
+			Wapi.user.checkExists(function(json){
+				if(json.exist){
+					addTally(W.dom.fm);
+					checkMobi.pass=2;
+					W.dom.fsms_b.status=false;
+					W.dom.fsms_b.style.background="#5cb85c";
+				}else{
+					W.alert("该手机尚未注册，您可以使用该手机注册一个新账号");
+					checkMobi.pass=1;
+					addErr(W.dom.fm);
+				}
+			},{mobile:v});
+		}
+		
+		function forgetNext(){//点击下一步,检测结果
+			if(!checkMobi.pass){
+				W.alert("请输入正确的手机号");
+				return;
+			}
+			if(checkMobi.pass==1){
+				W.alert("该手机尚未注册，您可以使用该手机注册一个新账号",function(){W.back()});
+				return;
+			}
+			this.setAttribute("data-show","setPwd");
+			show.call(this);
+		}
+		
+		function resetPwd(){//重置密码
+			if(!(W.dom.fm.value&&W.dom.fc.value&&W.dom.sp.value&&W.dom.srp.value)){
+				W.alert("各项均不能为空!");
+				return;
+			}
+			switch (1) {
+				case checkMobi.pass:
+					W.alert("该手机号还未注册");
+					return;
+				case W.dom.fc.pass:
+					W.alert("手机验证码不正确");
+					return;
+				case W.dom.sp.pass:
+					W.alert("密码格式不正确");
+					return;
+				case W.dom.srp.pass:
+					W.alert("两次输入密码不相同");
+					return;
+			}
+			W.loading("重置中...");
+			var data={
+				account:W.dom.fm.value,
+				valid_code:W.dom.fc.value,
+				valid_type:1,
+				password:W.dom.sp.value
+			}
+			
+			Wapi.user.resetPassword(function(json){
+				if(json.status_code){
+					W.loading();
+					W.errorCode(json);
+				}else{
+					W.logout();
+				}
+			},data);
+		}
+		
+		W.dom.fm=ff.querySelector("[name=mobile]").addEvent("keyup",checkMobi);
+		W.dom.fc=ff.querySelector("[name=valid_code]").addEvent("keyup",checkCode);
+		W.dom.fb=ff.querySelector("button").addEvent("click",forgetNext);
+		W.dom.fsms_b=ff.querySelector(".but.sms.send").addEvent("click",getSMS);
+		W.dom.setPwd=W("#setPwd");
+		W.dom.fsms_b.status="checkMobile";
+		
+		W.dom.sp=sf.querySelector("[name=password]").addEvent("change",chenckPwd);
+		W.dom.srp=sf.querySelector("[name=repwd]").addEvent("keyup",chenckPwd);
+		W.dom.sb=sf.querySelector("button").addEvent("click",resetPwd);
+	</script>
+</html>
