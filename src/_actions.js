@@ -2,7 +2,6 @@ var code="b573bcc9b949e6c593d1fb6d206f6c69";
 
 export const ACT ={
     action:{
-        ADD_SELECT:'ADD_SELECT',
         SELECT_CAR:'SELECT_CAR',
         SELECT_USERS:'SELECT_USERS',
         SELECT_USERS_ADD:'SELECT_USERS_ADD',
@@ -10,7 +9,7 @@ export const ACT ={
         SHOW_CARS:'SHOW_CARS',
         GET_USERS:'GET_USERS',
         GET_CARS:'GET_CARS',
-        GETED_USERS:'GETED_USERS',//hi
+        GETED_USERS:'GETED_USERS',
         GETED_CARS:'GETED_CARS'
     },
     'const':{
