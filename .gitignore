@@ -50,6 +50,8 @@ Temporary Items
 /node_modules/*
 /build/common.js
 /build/src/*
+/package.json
+/webpack.config.js
 
 !*.html
 
