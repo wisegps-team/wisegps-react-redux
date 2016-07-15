@@ -10,15 +10,6 @@ window._user;
 window._g;
 
 
-var ___={
-	"app_name":"WiCARE",
-	"ok":"确定",
-	"cancel":"取消",
-	"yes":"是",
-	"no":"否"
-}
-
-
 function getSearch(){
     var url=location.search;
     if(!url)return {};
@@ -155,32 +146,6 @@ W.debug=function(str){
 
 
 /**
- * 模块load的事件封装
- * @param {String} name 语言包的名称
- * @param {view} view 要监听的view
- * @param {Function} callback load事件的触发
- */
-W.viewLoaded=function(name,view,callback){
-    view.addEventListener('load',function(e) {
-		view.loaded=true;
-		view.params=e.params;
-        if(view.__||!name){
-            callback(view.__);
-            delete view.__;
-        }
-    });
-	if(name)
-		W.getLanguage(name,function(res){//加载语言
-			view.__=res;
-			if(view.loaded){
-				callback(view.__);
-				delete view.__;
-			}  
-		});
-}
-
-
-/**
  * 日期的toString方法扩展，输出更符合普通格式的字符串
  * @param {Date} d
  */
@@ -249,15 +214,6 @@ W.include=function(url,callback,errorCall){
 
 	//包含成功，把文件路径存储到WiStorm.included数组里
 	WiStorm.included.push(script.src);
-}
-
-/**
- * 加载语言包
- * @param {name} 文件名
- */
-W.getLanguage=function(name,callback){
-	var url=WiStorm.root+"language/"+navigator.language.toUpperCase()+"/"+name+".json";
-	W.getJSON(url,null,callback);
 }
 
 
@@ -1029,33 +985,6 @@ W.errorCode=function(json){
 }
 
 
-
-///下面是一些进入应用则需要执行的代码，例如加载配置文件，语言文件等
-
-//根据页面路径获取绝对路径
-var tem=location.href;
-var s=tem.search("/www/")+5;
-WiStorm.root=tem.slice(0,s);
-if(location.protocol=="http:"||location.protocol=="https:"){//浏览器环境
-	WiStorm.root=WiStorm_root;
-	WiStorm.isWeb=true;
-}
-tem=undefined;
-s=undefined;
-
-/**
- * 获取本地用户存储
- * 在微信中每隔24小时会清理一次，所以基本上只能得到本次登录之后存储的数据
- */
-W._getSeting();
-window._user=W.getSetting("user");
-if(_user&&_user.access_token){
-	W._login=true;
-}else 
-	W._login=false;
-
-
-
 W.login=function(){
 	if(_g.sso_login){//已经授权
 		if (!_g.access_token) {//登录不成功
@@ -1128,6 +1057,35 @@ W.toRegister=function(){
 	});
 }
 
+
+
+
+
+///下面是一些进入应用则需要执行的代码，例如加载配置文件，语言文件等
+
+//根据页面路径获取绝对路径
+var tem=location.href;
+var s=tem.search("/www/")+5;
+WiStorm.root=tem.slice(0,s);
+if(location.protocol=="http:"||location.protocol=="https:"){//浏览器环境
+	WiStorm.root=WiStorm_root;
+	WiStorm.isWeb=true;
+}
+tem=undefined;
+s=undefined;
+
+/**
+ * 获取本地用户存储
+ * 在微信中每隔24小时会清理一次，所以基本上只能得到本次登录之后存储的数据
+ */
+W._getSeting();
+window._user=W.getSetting("user");
+if(_user&&_user.access_token){
+	W._login=true;
+}else 
+	W._login=false;
+
+//处理用户登录
 if(_g.needUser&&!_g.openid){
 	W.wxLogin();
 }else if(_g.needOpenId=="true"){
@@ -1158,3 +1116,7 @@ if(!W._login&&location.pathname.indexOf("index.html")<0&&_g.intent!="logout"){
 		window.dispatchEvent(evt);
 	});
 }
+
+//获取语言资源
+var url=WiStorm.root+"language/"+navigator.language.toLowerCase()+".js";
+document.write('<script src="'+url+'"></script>');

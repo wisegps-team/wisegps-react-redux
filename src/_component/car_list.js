@@ -5,7 +5,6 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 import {List , ListItem,MakeSelectable} from 'material-ui/List';
 // import ContentInbox from 'material-ui/svg-icons/content/inbox';
 import FontIcon from 'material-ui/FontIcon';
-var __;
 let SelectableList = MakeSelectable(List);
 
 function wrapState(ComposedComponent) {
@@ -36,7 +35,6 @@ SelectableList = wrapState(SelectableList);
 
 export class CarList extends React.Component {
     render(){
-        __=this.props.__;
         let items=this.props.data.map(function (ele) {
             // return <CarItem value={ele.obj_id} data={ele} key={ele.obj_id} carClick={this.props.carClick}/>;
             return <ListItem

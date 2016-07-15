@@ -17,9 +17,7 @@ import {UserTree} from '../_component/user_tree';
 
 console.log('monitor加载了');
 var thisView=window.LAUNCHER.getView();//第一句必然是获取view
-
-var __;//语言资源
-if(!window.STORE){
+if(!window.STORE){//
     window.STORE=createStore(
         monitorApp,
         applyMiddleware(//应用中间件，为了可以使用异步action
@@ -27,17 +25,16 @@ if(!window.STORE){
         )
     );
     injectTapEventPlugin();//启用react触摸屏
+    // 每次 state 更新时，打印日志
+    // 注意 subscribe() 返回一个函数用来注销监听器
+    let unsubscribe = STORE.subscribe(() =>
+        console.log(STORE.getState())
+    )
 }
 
-// 每次 state 更新时，打印日志
-// 注意 subscribe() 返回一个函数用来注销监听器
-let unsubscribe = STORE.subscribe(() =>
-  console.log(STORE.getState())
-)
 
 
-W.viewLoaded('monitor',thisView,function(res){
-    __=res;
+thisView.addEventListener('load',function(){
     ReactDOM.render(
         <Provider store={STORE}>
             <APP/>
@@ -63,14 +60,13 @@ class App extends React.Component {
             <ThemeProvider>
                 <div>
                     <AppBar
-                    title={__.title}
+                    title={___.title}
                     iconClassNameRight="muidocs-icon-navigation-expand-more"
                     onLeftIconButtonTouchTap={()=>this.setState({drawer:true})}
                     />
                     <UserTree data={this.props.user}/>
                     <CarList 
                         data={this.props.show_cars} 
-                        __={__} 
                         carClick={carClick} 
                         active={this.props.select_car}
                     />

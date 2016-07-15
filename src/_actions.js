@@ -56,7 +56,6 @@ export const ACT ={
                 W.get(AJAX[1].url.replace('$user$',users),AJAX[1].data,function (res) {
                     dispatch(ACT.fun.getedCars(res));
                     setTimeout(()=>dispatch(ACT.fun.getCars(users)),10000);//10秒轮询
-                    dispatch(ACT.fun.showCars(res));
                 },AJAX[1].dataType);
             }
         },

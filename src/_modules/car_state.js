@@ -81,3 +81,18 @@ export function getUniAlertsDesc(uni_alerts) {
     }
     return desc;
 }
+
+
+export function getAllState(data){
+    let res=getStatusDesc(data,2);
+    
+    let f=parseInt(data.active_gps_data.signal/5);
+    f=(f>4)?4:f;
+    f=(f<1)?1:f;
+    let ft='差差弱良强';
+    res.signal_desc=ft[f];
+    res.signal_l=f;
+    res.status_desc=(data.active_gps_data.uni_status.indexOf(8196)!=-1)?'启动':'熄火';
+    res.gps_time=W.dateToString(W.date(data.active_gps_data.gps_time));
+    return res;
+}

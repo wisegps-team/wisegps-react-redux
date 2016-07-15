@@ -18,7 +18,6 @@ import {UserTree} from '../_component/user_tree';
 import Map from '../_component/map';
 require('../_sass/monitor.scss');
 
-var __;//语言资源
 let STORE=createStore(
     monitorApp,
     applyMiddleware(//应用中间件，为了可以使用异步action
@@ -54,14 +53,14 @@ const styles = {
   }
 };
 
-W.viewLoaded('monitor',window,function(res){
-    __=res;
+window.addEventListener('load',function(){
     ReactDOM.render(
         <Provider store={STORE}>
             <APP/>
         </Provider>
         ,W('#APP'));
 });
+
 
 
 class App extends React.Component {
@@ -88,7 +87,7 @@ class App extends React.Component {
                     />
                     <Drawer open={this.state.drawer}>
                         <AppBar
-                        title={__.title}
+                        title={___.title}
                         onLeftIconButtonTouchTap={()=>this.setState({drawer:false})}
                         />
                         <div style={styles.userTreeBox}>
@@ -97,7 +96,6 @@ class App extends React.Component {
                         <div style={styles.carListBox}>
                             <CarList 
                                 data={this.props.show_cars} 
-                                __={__} 
                                 carClick={carClick} 
                                 active={this.props.select_car}
                             />

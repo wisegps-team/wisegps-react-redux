@@ -1,7 +1,7 @@
 "use strict";
 import React, {Component} from 'react';
 
-import {getStatusDesc} from '../_modules/car_state';
+import {getStatusDesc,getAllState} from '../_modules/car_state';
 
 import MapManager from './map_manager';
 
@@ -202,11 +202,6 @@ class Car extends Component{
 }
 
 function info(data,thisCar) {
-    let f=parseInt(data.active_gps_data.signal/5);
-    f=(f>4)?4:f;
-    f=(f<1)?1:f;
-    let ft='差差弱良强';
-    let uni_status=(data.active_gps_data.uni_status.indexOf(8196)!=-1)?'启动':'熄火';
     let g,gt;
     if(data.active_gps_data.gps_flag==2){
         g='_g',gt='定位';
@@ -214,16 +209,12 @@ function info(data,thisCar) {
         g='',gt='无定位';
     }
     let model=(data.call_phones.length&&data.call_phones[0].obj_model)?'('+data.call_phones[0].obj_model+')':'';
-    let gps_time=W.dateToString(W.date(data.active_gps_data.gps_time));
-    let desc=getStatusDesc(data,2).desc;
+    let desc=getAllState(data);
+
     let div=document.createElement('div');
     div.style.fontSize='14px';
-    div.innerHTML='<p><span><font style="font-size: 15px; font-weight:bold; font-family:微软雅黑;">'+data.obj_name+model+'</font></span><img src="http://web.wisegps.cn/images/wifi'+f+'.png" title="信号'+ft[f]+'"/><img src="http://web.wisegps.cn/images/gps'+g+'.png" title="'+gt+'"/></p><table style="width: 100%;"><tbody><tr><td><font color="#244FAF">车辆状态：</font>'+desc+'</td><td><font color="#244FAF">启动状态：</font>'+uni_status+'</td></tr><tr><td colspan="2"><font color="#244FAF">定位时间：'+gps_time+'</font></td></tr><tr><td colspan="2"><font color="#244FAF">位置描述：</font><span class="location">获取地址中……</span></td></tr><tr><td width="50%"><font color="#244FAF">管理人员：</font>'+data.call_phones[0].manager+'</td><td><font color="#244FAF">联系电话：</font>'+data.call_phones[0].phone1+'</td></tr><tr><td width="50%"><font color="#244FAF">司机姓名：</font>'+data.call_phones[0].driver+'</td><td><font color="#244FAF">联系电话：</font>'+data.call_phones[0].phone+'</td></tr></tbody></table>';
-    let geo=new WMap.Geocoder();
-    geo.getLocation(new WMap.Point(data.active_gps_data.b_lon,data.active_gps_data.b_lat),function(res){
-        if(res)
-            div.querySelector('.location').innerText=res.address;
-    });
+    div.innerHTML='<p><span><font style="font-size: 15px; font-weight:bold; font-family:微软雅黑;">'+data.obj_name+model+'</font></span><img src="http://web.wisegps.cn/images/wifi'+desc.signal_l+'.png" title="信号'+desc.singal_desc+'"/><img src="http://web.wisegps.cn/images/gps'+g+'.png" title="'+gt+'"/></p><table style="width: 100%;"><tbody><tr><td><font color="#244FAF">车辆状态：</font>'+desc.desc+'</td><td><font color="#244FAF">启动状态：</font>'+desc.status_desc+'</td></tr><tr><td colspan="2"><font color="#244FAF">定位时间：'+desc.gps_time+'</font></td></tr><tr><td colspan="2"><font color="#244FAF">位置描述：</font><span class="location">获取地址中……</span></td></tr><tr><td width="50%"><font color="#244FAF">管理人员：</font>'+data.call_phones[0].manager+'</td><td><font color="#244FAF">联系电话：</font>'+data.call_phones[0].phone1+'</td></tr><tr><td width="50%"><font color="#244FAF">司机姓名：</font>'+data.call_phones[0].driver+'</td><td><font color="#244FAF">联系电话：</font>'+data.call_phones[0].phone+'</td></tr></tbody></table>';
+    
     let b=document.createElement('button');
     b.innerText=thisCar.state.tracking?'取消跟踪':'跟踪';
     b.addEventListener('click',function(){
@@ -231,6 +222,12 @@ function info(data,thisCar) {
         this.innerText=thisCar.state.tracking?'取消跟踪':'跟踪';
     });
     div.appendChild(b);
+
+    let geo=new WMap.Geocoder();
+    geo.getLocation(new WMap.Point(data.active_gps_data.b_lon,data.active_gps_data.b_lat),function(res){
+        if(res)
+            div.querySelector('.location').innerText=res.address;
+    });
     return div;
 }
 
