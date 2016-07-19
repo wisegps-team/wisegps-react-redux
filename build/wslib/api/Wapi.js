@@ -49,7 +49,7 @@ WiStormAPI.prototype.postApi=function(getData,callback,data){
 	    v: '1.0',         //接口版本
 	    sign_method: 'md5'//签名方式
 	}
-	D.timestamp=new Date().WtoString();
+	D.timestamp=W.dateToString(new Date());
 	D.app_key=this.appKey;
 	this.jsonConcat(D,getData);
 
@@ -99,7 +99,7 @@ WiStormAPI.prototype.safetyGet=function(data,callback,op){
 }
 
 WiStormAPI.prototype.makeUrl=function(json){
-	if(!json.access_token)
+	if(!json.access_token&&this.access_token)
 		json.access_token=this.access_token;
 	var sign="";
 	var URL="";
@@ -876,7 +876,7 @@ WCommApi.prototype.sendWeixin=function(callback,data){
             "color": "#173177"
         },
         "keynote2": {
-            "value": now.WtoString(),
+            "value": W.dateToString(now),
             "color": "#173177"
         },
         "remark": {
@@ -1118,7 +1118,7 @@ WFileApi.prototype.upload=function(callback,file,updateProgress,op){
 	    sign_method: 'md5',//签名方式
 		fields:'待定'	//默认返回的字段
 	};
-	OP.timestamp=new Date().WtoString();
+	OP.timestamp=W.dateToString(new Date());
 	OP.app_key=this.appKey;
 	this.jsonConcat(OP,op);
 	OP.method="wicare.file.upload"; 

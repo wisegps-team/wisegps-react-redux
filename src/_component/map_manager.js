@@ -68,6 +68,9 @@ class MapManager extends Component {
             value: value
         });
     };
+    pageChange(value){
+        alert('切到第'+value+'页');
+    }
     render() {
         return (
             <Paper zDepth={2} style={this.props.style}>
@@ -75,12 +78,16 @@ class MapManager extends Component {
                     value={this.state.value}
                     onChange={this.handleChange}
                 >
-                    <Tab label="兴趣点" value="a" style={styles.tab}>
+                    <Tab label={___.poi} value="a" style={styles.tab}>
                         <div style={styles.div}>
                             <WTable 
                                 data={xqd} 
-                                keys={[{name:'名称',key:'name'},{name:'备注',key:'remark'},{name:'操作'}]} 
+                                keys={[{name:___.name,key:'name'},{name:___.remark,key:'remark'},{name:___.operation}]} 
                                 active={Active1}
+                                page={30}
+                                pageVlaue={0}
+                                pageChange={this.pageChange}
+
                                 columnProps={columnProps}
                                 headerColumnProps={columnProps}
                                 rowProps={rowProps}
@@ -88,11 +95,11 @@ class MapManager extends Component {
                             />
                         </div>
                     </Tab>
-                    <Tab label="围栏" value="b" style={styles.tab}>
+                    <Tab label={___.geo} value="b" style={styles.tab}>
                         <div style={styles.div}>
                             <WTable 
                                 data={xqd} 
-                                keys={[{name:'名称',key:'name'},{name:'范围',key:'remark'},{name:'操作'}]} 
+                                keys={[{name:___.name,key:'name'},{name:___.range,key:'remark'},{name:___.operation}]} 
                                 active={Active1}
                             />
                         </div>

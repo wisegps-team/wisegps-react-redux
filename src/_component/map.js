@@ -1,37 +1,8 @@
 "use strict";
 import React, {Component} from 'react';
 
+import WMap from '../_modules/WMap';
 import {getStatusDesc,getAllState} from '../_modules/car_state';
-
-import MapManager from './map_manager';
-
-var map_ready=false;
-var wmap,infoWindow; 
-
-
-W.include(WiStorm.root+'/wslib/toolkit/WMap.js',function (e) {
-    if(typeof e==='boolean'&&e){//已经包含
-        if(WMap&&WMap.status==200){//百度地图js也已经加载完了
-            map_ready=true;
-        }else{
-            window.addEventListener('W.mapready',function() {
-                map_ready=true;
-            });
-        }
-    }
-});
-
-
-const styles={
-    manager:{
-        position: 'absolute',
-        zIndex: 1,
-        width: '300px',
-        right: 0,
-        top:'50px',
-        maxHeight: '100%'
-    }
-}
 
 
 class Map extends Component {
@@ -41,7 +12,7 @@ class Map extends Component {
     }
 
     componentDidMount() {
-        if(map_ready){
+        if(WMap.ready){//已经加载好
             this.mapinit();
         }else{
             window.addEventListener('W.mapready',this.mapinit());
@@ -53,22 +24,22 @@ class Map extends Component {
             let view=nextProps.cars.map(function (ele) {
                 return new BMap.Point(ele.active_gps_data.b_lon, ele.active_gps_data.b_lat);
             });
-            wmap.setViewport(view);//设置合适的层级大小
+            this.map.setViewport(view);//设置合适的层级大小
         }
     }
     mapinit(){
-        wmap=new WMap(this.props.id);
-        wmap.enableScrollWheelZoom();//启用滚轮放大缩小
-        wmap.addControl(new WMap.NavigationControl());
-        infoWindow=new WMap.InfoWindow('',{
+        this.map=new WMap(this.props.id);
+        this.map.enableScrollWheelZoom();//启用滚轮放大缩小
+        this.map.addControl(new WMap.NavigationControl());
+        this.map.infoWindow=new WMap.InfoWindow('',{
             width : 350,     // 信息窗口宽度
             height: 200     // 信息窗口高度
         });
         let div=document.createElement('div');
-        infoWindow.setContent(div);
-        infoWindow._div=div;
-        infoWindow._close=function(){};
-        infoWindow.addEventListener('close',function(){
+        this.map.infoWindow.setContent(div);
+        this.map.infoWindow._div=div;
+        this.map.infoWindow._close=function(){};
+        this.map.infoWindow.addEventListener('close',function(){
             if(this._close)
                 this._close();
         })
@@ -77,15 +48,23 @@ class Map extends Component {
 
     render() {
         let children;
-        if(wmap){
+        if(this.map){
             let windowOpen=false;
             children=this.props.cars.length?this.props.cars.map(function (ele) {
                 windowOpen=(this.props.active==ele.obj_id)
-                return <Car data={ele} key={ele.obj_id} carClick={this.props.carClick} open={windowOpen}/>;
+                return (<Car 
+                    key={ele.obj_id}
+                    map={this.map}
+                    data={ele} 
+                    carClick={this.props.carClick} 
+                    open={windowOpen}
+                />);
             },this):[];
-            children.push(<MapManager style={styles.manager} key='MapManager' />);
         }
-        return React.createElement('div',this.props,children);
+        return (<div {...this.props}>
+            {children}
+            {this.props.children}
+        </div>);
     }
 }
 
@@ -95,10 +74,10 @@ class Car extends Component{
         this.openWindow = this.openWindow.bind(this);
         this.state={
             tracking:false
-        }
+        };
     }
     componentDidMount(){
-        this.marker=wmap.addMarker({
+        this.marker=this.props.map.addMarker({
             img:'http://web.wisegps.cn/stylesheets/objects/normal_stop_0.gif',
             w:28,
             h:28,
@@ -106,6 +85,10 @@ class Car extends Component{
             lat:this.props.data.active_gps_data.b_lat
         });
         this.marker.addEventListener("click",this.openWindow);
+        
+        if(this.props.open){//打开infowindow
+            this.marker.openInfoWindow(this.getWindow());
+        }
         this.setMarker();
     }
     componentWillReceiveProps(nextProps) {
@@ -136,12 +119,12 @@ class Car extends Component{
                         strokeOpacity:0.5
                     }
                 );
-                if(this.polyline)wmap.removeOverlay(this.polyline);
-                wmap.addOverlay(polyline); 
+                if(this.polyline)this.props.map.removeOverlay(this.polyline);
+                this.props.map.addOverlay(polyline); 
                 this.polyline=polyline;
             }
         }else if(this.polyline){
-            wmap.removeOverlay(this.polyline); 
+            this.props.map.removeOverlay(this.polyline); 
             this.polyline=undefined;
         }
     }
@@ -149,25 +132,32 @@ class Car extends Component{
         console.log('已经更新');
     }
     componentWillUnmount() {//移除
-        wmap.removeOverlay(this.marker);
-        delete this.marker;
+        if(this.props.open){
+            this.props.map.infoWindow._close=null;
+        }
+        this.props.map.removeOverlay(this.marker);
+        this.marker=undefined;
+        if(this.polyline){
+            this.props.map.removeOverlay(this.polyline);
+            this.polyline=undefined;
+        }
     }
 
     openWindow(){
         this.props.carClick(this.props.data.obj_id);
     }
     getWindow(){
-        var div=infoWindow._div;
+        var div=this.props.map.infoWindow._div;
         let new_div=info(this.props.data,this);
         if(div._content)
             div.replaceChild(new_div,div._content);
         else
             div.appendChild(new_div);
         div._content=new_div;
-        infoWindow._close=null;
-        setTimeout(()=>infoWindow._close=()=>this.props.carClick(0),500);//避免从一个车点到另一个车会触发这个方法
+        this.props.map.infoWindow._close=null;
+        setTimeout(()=>this.props.map.infoWindow._close=()=>this.props.carClick(0),500);//避免从一个车点到另一个车会触发这个方法
 
-        return infoWindow;
+        return this.props.map.infoWindow;
     }
     setMarker(){
         let imgs=[
@@ -204,22 +194,22 @@ class Car extends Component{
 function info(data,thisCar) {
     let g,gt;
     if(data.active_gps_data.gps_flag==2){
-        g='_g',gt='定位';
+        g='_g',gt=___.gps_location;
     }else{
-        g='',gt='无定位';
+        g='',gt=___.no_gps_location;
     }
     let model=(data.call_phones.length&&data.call_phones[0].obj_model)?'('+data.call_phones[0].obj_model+')':'';
     let desc=getAllState(data);
 
     let div=document.createElement('div');
     div.style.fontSize='14px';
-    div.innerHTML='<p><span><font style="font-size: 15px; font-weight:bold; font-family:微软雅黑;">'+data.obj_name+model+'</font></span><img src="http://web.wisegps.cn/images/wifi'+desc.signal_l+'.png" title="信号'+desc.singal_desc+'"/><img src="http://web.wisegps.cn/images/gps'+g+'.png" title="'+gt+'"/></p><table style="width: 100%;"><tbody><tr><td><font color="#244FAF">车辆状态：</font>'+desc.desc+'</td><td><font color="#244FAF">启动状态：</font>'+desc.status_desc+'</td></tr><tr><td colspan="2"><font color="#244FAF">定位时间：'+desc.gps_time+'</font></td></tr><tr><td colspan="2"><font color="#244FAF">位置描述：</font><span class="location">获取地址中……</span></td></tr><tr><td width="50%"><font color="#244FAF">管理人员：</font>'+data.call_phones[0].manager+'</td><td><font color="#244FAF">联系电话：</font>'+data.call_phones[0].phone1+'</td></tr><tr><td width="50%"><font color="#244FAF">司机姓名：</font>'+data.call_phones[0].driver+'</td><td><font color="#244FAF">联系电话：</font>'+data.call_phones[0].phone+'</td></tr></tbody></table>';
+    div.innerHTML=W.replace('<p><span><font style="font-size: 15px; font-weight:bold; font-family:微软雅黑;">'+data.obj_name+model+'</font></span><img src="http://web.wisegps.cn/images/wifi'+desc.signal_l+'.png" title="___.signal'+desc.singal_desc+'"/><img src="http://web.wisegps.cn/images/gps'+g+'.png" title="'+gt+'"/></p><table style="width: 100%;"><tbody><tr><td><font color="#244FAF">___.car_state：</font>'+desc.desc+'</td><td><font color="#244FAF">___.state：</font>'+desc.status_desc+'</td></tr><tr><td colspan="2"><font color="#244FAF">___.gps_time：'+desc.gps_time+'</font></td></tr><tr><td colspan="2"><font color="#244FAF">___.position_description：</font><span class="location">___.getting_position</span></td></tr><tr><td width="50%"><font color="#244FAF">___.management：</font>'+data.call_phones[0].manager+'</td><td><font color="#244FAF">___.cellphone：</font>'+data.call_phones[0].phone1+'</td></tr><tr><td width="50%"><font color="#244FAF">___.driver：</font>'+data.call_phones[0].driver+'</td><td><font color="#244FAF">___.cellphone：</font>'+data.call_phones[0].phone+'</td></tr></tbody></table>');
     
     let b=document.createElement('button');
-    b.innerText=thisCar.state.tracking?'取消跟踪':'跟踪';
+    b.innerText=thisCar.state.tracking?___.untrack:___.track;
     b.addEventListener('click',function(){
         thisCar.track(!thisCar.state.tracking);
-        this.innerText=thisCar.state.tracking?'取消跟踪':'跟踪';
+        this.innerText=thisCar.state.tracking?___.untrack:___.track;
     });
     div.appendChild(b);
 
