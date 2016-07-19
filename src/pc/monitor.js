@@ -16,6 +16,7 @@ import {CarList} from '../_component/car_list';
 import {UserTree} from '../_component/user_tree';
 
 import Map from '../_component/map';
+import MapManager from '../_component/map_manager';
 require('../_sass/monitor.scss');
 
 let STORE=createStore(
@@ -33,7 +34,7 @@ console.log(STORE.getState());
 // 每次 state 更新时，打印日志
 // 注意 subscribe() 返回一个函数用来注销监听器
 let unsubscribe = STORE.subscribe(() =>
-  console.log(STORE.getState())
+    console.log(STORE.getState())
 )
 
 const styles = {
@@ -51,7 +52,15 @@ const styles = {
       height:'55vh',
       borderTop:'solid 1px #999',
       overflow:'auto'
-  }
+  },
+    manager:{
+        position: 'absolute',
+        zIndex: 1,
+        width: '300px',
+        right: 0,
+        top:'50px',
+        maxHeight: '100%'
+    }
 };
 
 window.addEventListener('load',function(){
@@ -103,7 +112,8 @@ class App extends React.Component {
                         </div>
                     </Drawer>
                     <div className='container'>
-                        <Map id='monitor_map' cars={this.props.show_cars} active={this.props.select_car} carClick={carClick} />
+                        <Map id='monitor_map' cars={this.props.show_cars} active={this.props.select_car} carClick={carClick}/>
+                        <MapManager style={styles.manager} key='MapManager' />
                     </div>
                 </div>
             </ThemeProvider>

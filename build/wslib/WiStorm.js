@@ -1057,7 +1057,18 @@ W.toRegister=function(){
 	});
 }
 
-
+W.replace=function(text,json){
+	json=json||___;
+	if(json)
+		return text.replace(/___\.[a-zA-Z0-9_]+/g,function(w){
+			w=json[w.slice(4)];
+			return ((typeof w!='number')?(w||''):w);
+		});
+	else 
+		return text.replace(/___\.[a-zA-Z0-9_]+/g,function(w){
+			return w.slice(4);
+		});
+}
 
 
 
