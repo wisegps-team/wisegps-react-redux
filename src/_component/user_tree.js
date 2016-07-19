@@ -8,7 +8,7 @@ import Checkbox from 'material-ui/Checkbox';
 export class UserTree extends React.Component{
     constructor(props) {
         super(props);
-        this.handleTouch=this.handleTouch.bind(this);
+        
     }
     handleTouch(e){
         let users=this.props.select_users;
@@ -31,10 +31,11 @@ export class UserTree extends React.Component{
                 primaryText={this.props.data.cust_name}
                 initiallyOpen={true}
                 primaryTogglesNestedList={true}
-                innerDivStyle={{fontSize:'14px',borderBottom:'solid 1px #ccc'}}
+                innerDivStyle={{fontSize:'14px',borderBottom:'solid 1px #ccc',paddingTop:'10px',paddingBottom:'10px',paddingLeft:'50px'}}
                 nestedItems={children}
                 nestedListStyle={{paddingLeft:'15px',paddingTop:'0',paddingBottom:'0'}}
-                leftCheckbox={<Checkbox defaultChecked={users.includes(this.props.data)} onClick={this.handleTouch}/>}
+                leftCheckbox={<Checkbox style={{marginLeft:'-10px',marginTop:'-5px'}} defaultChecked={users.includes(this.props.data)} onClick={this.handleTouch.bind(this)}/>}
+                
             />
         );
     }

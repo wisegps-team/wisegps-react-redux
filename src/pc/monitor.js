@@ -43,13 +43,14 @@ const styles = {
   },
   userTreeBox:{
       display:'block',
-      height:'240px',
-      overflow:'scroll'
+      height:'35vh',
+      overflow:'auto'
   },
   carListBox:{
       display:'block',
-      height:'360px',
-      overflow:'scroll'
+      height:'55vh',
+      borderTop:'solid 1px #999',
+      overflow:'auto'
   }
 };
 
