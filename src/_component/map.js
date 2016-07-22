@@ -9,6 +9,12 @@ class Map extends Component {
     constructor(props){
         super(props);
         this.mapinit = this.mapinit.bind(this);
+        this.state={
+            hobbies_view:[],
+            selected_hobby:{},
+            fences_view:[],
+            selected_fence:{}
+        }
     }
 
     componentDidMount() {
@@ -22,10 +28,74 @@ class Map extends Component {
     componentWillReceiveProps(nextProps) {//收到新props
         if(nextProps.cars.length!=this.props.cars.length){
             let view=nextProps.cars.map(function (ele) {
-                return new BMap.Point(ele.active_gps_data.b_lon, ele.active_gps_data.b_lat);
+                return new WMap.Point(ele.active_gps_data.b_lon, ele.active_gps_data.b_lat);
             });
             this.map.setViewport(view);//设置合适的层级大小
         }
+
+        if(this.props.hobbies.length==0&&nextProps.hobbies.length>0){
+            let hobbies_view=nextProps.hobbies.map(item=>{
+                let obj={}
+                obj.id=item._id;
+                obj.view=this.addPoint(item.rev_lon,item.rev_lat,item.poi_name);
+                item.visible?obj.view.show():obj.view.hide();
+                return obj;
+            });
+            this.setState({
+                hobbies_view:hobbies_view,
+                selected_hobby:nextProps.selected_hobby
+            });
+        }
+        let old_hobby=this.state.selected_hobby;
+        let new_hobby=Object.assign({}, nextProps.selected_hobby);
+        let str_old_hobby=JSON.stringify(old_hobby);
+        let str_new_hobby=JSON.stringify(new_hobby);
+        if(str_new_hobby!=str_old_hobby){
+            this.map.moveTo(new_hobby.rev_lon,new_hobby.rev_lat);
+            console.log('hobbies changed');
+            if(str_old_hobby=="{}"&&str_new_hobby!="{}"){//add
+                let target=this.state.hobbies_view.filter(ele=>ele.id==new_hobby._id);
+                target[0].view.show();
+            }else if(str_old_hobby!="{}"&&str_new_hobby=="{}"){//delete
+                let target=this.state.hobbies_view.filter(ele=>ele.id==new_hobby._id);
+            }else{//update
+                let target=this.state.hobbies_view.filter(ele=>ele.id==new_hobby._id);
+                new_hobby.visible?target[0].view.show():target[0].view.hide();
+            }
+            this.setState({selected_hobby:new_hobby});
+        }
+        
+        if(this.props.fences.length==0&&nextProps.fences.length>0){
+            let fences_view=nextProps.fences.map(item=>{
+                let obj={}
+                obj.id=item._id;
+                obj.view=this.addPoint(item.rev_lon,item.rev_lat,item.poi_name);
+                item.visible?obj.view.show():obj.view.hide();
+                return obj;
+            });
+            this.setState({
+                fences_view:fences_view,
+                selected_fence:nextProps.selected_fence
+            });
+        }
+        let old_fence=this.state.selected_fence;
+        let new_fence=Object.assign({}, nextProps.selected_fence);
+        let str_old_fence=JSON.stringify(old_fence);
+        let str_new_fence=JSON.stringify(new_fence);
+        if(str_new_fence!=str_old_fence){
+            this.map.moveTo(new_fence.rev_lon,new_fence.rev_lat);
+            console.log('fences changed');
+            if(str_old_fence=="{}"&&str_new_fence!="{}"){//add
+                let target=this.state.fences_view.filter(ele=>ele.id==new_fence._id);
+            }else if(str_old_fence!="{}"&&str_new_fence=="{}"){//delete
+                let target=this.state.fences_view.filter(ele=>ele.id==new_fence._id);
+            }else{//update
+                let target=this.state.fences_view.filter(ele=>ele.id==new_fence._id);
+                new_fence.visible?target[0].view.show():target[0].view.hide();
+            }
+            this.setState({selected_fence:new_fence});
+        }
+
     }
     mapinit(){
         this.map=new WMap(this.props.id);
@@ -44,6 +114,23 @@ class Map extends Component {
                 this._close();
         })
         this.forceUpdate();
+    }
+    addPoint(lon,lat,str){
+         let marker=this.map.addMarker({
+            lon:lon,
+            lat:lat,
+            desc:str
+        });
+        return marker
+    }
+    addFence(lon,lat,r,str){
+        this.circle=this.map.addCircle({
+            lon:lon,
+            lat:lat,
+            r:r,
+            desc:str
+        });
+        this.map.addOverlay(this.circle);
     }
 
     render() {
@@ -98,7 +185,7 @@ class Car extends Component{
                 this.marker.openInfoWindow(win);
         }
         if(this.props.data.active_gps_data.b_lon!=nextProps.data.active_gps_data.b_lon||this.props.data.active_gps_data.b_lat!=nextProps.data.active_gps_data.b_lat){
-            let pos=new BMap.Point(nextProps.data.active_gps_data.b_lon,nextProps.data.active_gps_data.b_lat);
+            let pos=new WMap.Point(nextProps.data.active_gps_data.b_lon,nextProps.data.active_gps_data.b_lat);
             this.marker.setPosition(pos);
             if(this.state.tracking){
                 //跟踪当中
@@ -174,7 +261,7 @@ class Car extends Component{
     }
     track(start){//开始跟踪或者取消
         if(start){
-            let pos=new BMap.Point(this.props.data.active_gps_data.b_lon,this.props.data.active_gps_data.b_lat);
+            let pos=new WMap.Point(this.props.data.active_gps_data.b_lon,this.props.data.active_gps_data.b_lat);
             this.setState({
                 tracking:true,
                 tracking_line:[pos]
