@@ -83,6 +83,8 @@ class App extends React.Component {
 
     componentDidMount(){
         STORE.dispatch(ACT.fun.getUsers(true));//异步的action
+        STORE.dispatch(ACT.fun.getHobbies([]));
+        STORE.dispatch(ACT.fun.getFences([]));
     }
 
     render() {
@@ -112,8 +114,24 @@ class App extends React.Component {
                         </div>
                     </Drawer>
                     <div className='container'>
-                        <Map id='monitor_map' cars={this.props.show_cars} active={this.props.select_car} carClick={carClick}/>
-                        <MapManager style={styles.manager} key='MapManager' />
+                        <Map 
+                            id='monitor_map' 
+                            cars={this.props.show_cars} 
+                            active={this.props.select_car} 
+                            carClick={carClick}
+                            hobbies={this.props.hobbies}
+                            selected_hobby={this.props.selected_hobby}
+                            fences={this.props.fences}
+                            selected_fence={this.props.selected_fence}
+                        />
+                        <MapManager 
+                            hobbies={this.props.hobbies} 
+                            fences={this.props.fences} 
+                            style={styles.manager} 
+                            key='MapManager' 
+                            hobbyClick={hobbyClick}
+                            fenceClick={fenceClick}
+                        />
                     </div>
                 </div>
             </ThemeProvider>
@@ -137,5 +155,32 @@ function userClick(data,intent){
         STORE.dispatch(ACT.fun.selectUsersDelete(data));
     }else if(intent=="add"){
         STORE.dispatch(ACT.fun.selectUsersAdd(data));
+    }
+}
+
+function hobbyClick(data,intent){
+    switch(intent){
+        case 'add':
+            STORE.dispatch(ACT.fun.addHobby(data));
+        case 'delete':
+            STORE.dispatch(ACT.fun.deleteHobby(data));
+        case 'update':
+            STORE.dispatch(ACT.fun.updateHobby(data));
+            STORE.dispatch(ACT.fun.selectHobby(data));
+        default:
+            break;
+    }
+}
+function fenceClick(data,intent){
+    switch(intent){
+        case 'add':
+            STORE.dispatch(ACT.fun.addFence(data));
+        case 'delete':
+            STORE.dispatch(ACT.fun.deleteFence(data));
+        case 'update':
+            STORE.dispatch(ACT.fun.updateFence(data));
+            STORE.dispatch(ACT.fun.selectFence(data));
+        default:
+            break;
     }
 }
