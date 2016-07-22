@@ -34,6 +34,7 @@ class WTable extends Component {
                 key={i}
                 columnProps={this.props.columnProps}
                 rowProps={this.props.rowProps}
+                rowFun={this.props.rowFun}
             />)
         );
         let hraders=header.map((ele,i)=>(
@@ -77,7 +78,7 @@ class Row extends Component {
         if(this.props.active){
             let Active=this.props.active;
             columns.push(<TableRowColumn {...this.props.columnProps} key={columns.length}>
-                <Active data={this.props.data}/>
+                <Active data={this.props.data} funProp={this.props.rowFun}/>
             </TableRowColumn>);
         }
         return (
