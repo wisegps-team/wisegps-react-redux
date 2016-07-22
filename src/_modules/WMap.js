@@ -20,11 +20,12 @@ function WMap(id,lat,lon,zoom){
     return map
 }
 
+//移动地图到中心点lon,lat
 WMap.prototype.moveTo=function(lon,lat){
 	this.panTo(new BMap.Point(lon,lat));
 }
 
-//添加一个标点,传递标点的构造信息，目前只需要lat,lon
+//添加一个标点,传递标点的构造信息，目前只需要lat,lon,img,desc
 WMap.prototype.addMarker=function(data){
     if(!data){return;}
 	var marker;
@@ -33,8 +34,30 @@ WMap.prototype.addMarker=function(data){
     	marker = new BMap.Marker(new BMap.Point(data.lon,data.lat),{icon:icon});
     }else
     	marker = new BMap.Marker(new BMap.Point(data.lon,data.lat));
-	this.addOverlay(marker);  
+	this.addOverlay(marker);
+	if(data.desc){
+		var label = new BMap.Label(data.desc,{offset:new BMap.Size(20,-10)});
+		marker.setLabel(label);
+	}
     return marker;
+}
+
+//添加一个圆形，需要传入圆心经纬度lon,lat,半径r
+WMap.prototype.addCircle=function(data){
+	if(!data){return;}
+	var point = new BMap.Point(data.lon,data.lat);
+	var circle = new BMap.Circle(point,data.r,{strokeColor:"red", strokeWeight:2, strokeOpacity:0.5});
+	var opts = {
+	  position : point,    // 指定文本标注所在的地理位置
+	}
+	var label = new BMap.Label(data.desc, opts);
+	this.addOverlay(label); 
+	// this.addOverlay(circle);
+	
+	// var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});//比例尺
+	// this.addControl(top_left_control); 
+
+	return circle;
 }
 
 //异步加载百度地图需要一个全局方法，以供类似jsonp方式的使用
