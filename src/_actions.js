@@ -14,13 +14,15 @@ export const ACT ={
 
         GET_HOBBIES_START:'GET_HOBBIES_START',
         GET_HOBBIES_END:'GET_HOBBIES_END',
-        ADD_HOBBY:'ADD_HOBBY',
+        ADD_HOBBY_START:'ADD_HOBBY_START',
+        ADD_HOBBY_FAIL:'ADD_HOBBY_FAIL',
         DELETE_HOBBY:'DELETE_HOBBY',
         UPDATE_HOBBY:'UPDATE_HOBBY',
         SELECT_HOBBY:'SELECT_HOBBY',
 
-        GET_FENCES:'GET_FENCES',
-        ADD_FENCE:'ADD_FENCE',
+        GET_FENCES_END:'GET_FENCES_END',
+        ADD_FENCE_START:'ADD_FENCE_START',
+        ADD_FENCE_FAIL:'ADD_FENCE_FAIL',
         DELETE_FENCE:'DELETE_FENCE',
         UPDATE_FENCE:'UPDATE_FENCE',
         SELECT_FENCE:'SELECT_FENCE'
@@ -96,13 +98,82 @@ export const ACT ={
         getHobbiesEnd:function(hobbies){//获取所有兴趣点，结束
             return{type:ACT.action.GET_HOBBIES_END,hobbies};
         },
-        addHobby:function(hobby){//添加一个兴趣点
-            return {type:ACT.action.ADD_HOBBY,hobby};
+        addHobbyStart:function(){//添加一个兴趣点
+            return {type:ACT.action.ADD_HOBBY_START};
+        },
+        addHobbySubmit:function(hobby){
+            return function(dispatch){
+                let url="http://web.wisegps.cn/app/poi/?auth_code="+code;
+                let options={
+                    data:hobby,
+                    dataType:'json',
+                    type:'post',
+                    timeout:10000,
+                    success:function(res){//添加完成之后重新从服务器获取兴趣点
+                        dispatch(ACT.fun.getHobbies([]));
+                    },
+                    error:function(xhr,type,errorThrow){
+                        alert('fail to add hobby');
+                        console.log(type+'___url:'+url);
+                        dispatch(ACT.fun.addHobbyFail());
+                    }
+                }
+                W.ajax(url,options);
+            }
+        },
+        addHobbyFail:function(){
+            return {type:ACT.action.ADD_HOBBY_FAIL};
         },
         deleteHobby:function(hobby){//删除一个兴趣点
-            return {type:ACT.action.DELETE_HOBBY,hobby};
+            return function(dispatch){
+                let url="http://web.wisegps.cn/app/poi/"+hobby.poi_id+"?auth_code=" +code;
+                let options={
+                    data:null,
+                    dataType:'json',
+                    type:'DELETE',
+                    timeout:10000,
+                    success:function(res){
+                        dispatch(ACT.fun.getHobbies([]));
+                    },
+                    error:function(xhr,type,errorThrow){
+                        console.log(type+'___url:'+url);
+                    }
+                }
+                W.ajax(url,options);
+            }
         },
         updateHobby:function(hobby){//更新一个兴趣点
+            return {type:ACT.action.UPDATE_HOBBY,hobby};
+        },
+        updateHobbySubmit:function(hobby){
+            return function(dispatch){
+                let url='http://web.wisegps.cn/app/poi/'+hobby.poi_id+'?auth_code='+code
+                let data={
+                    poi_name:hobby.poi_name,
+                    cust_id:hobby.cust_id,
+                    poi_type:hobby.poi_type,
+                    remark:hobby.remark,
+                    lon:hobby.lon, 
+                    lat:hobby.lat,
+                    is_geo:0, 
+                    width:hobby.width
+                }
+                let options={
+                    data:data,
+                    dataType:'json',
+                    type:"PUT",
+                    timeout:10000,
+                    success:function(res){
+                        dispatch(ACT.fun.getHobbies([]));
+                    },
+                    error:function(xhr,type,errorThrow){
+                        console.log(type+'___url:'+url);
+                    }
+                }
+                W.ajax(url,options);
+            }
+        },
+        updateHobbyEnd:function(hobby){
             return {type:ACT.action.UPDATE_HOBBY,hobby};
         },
         selectHobby:function(hobby){//设置当前已选择的兴趣点
@@ -117,16 +188,81 @@ export const ACT ={
             }
         },
         getFencesEnd(fences){//获取到所有围栏数据
-            return {type:ACT.action.GET_FENCES,fences};
+            return {type:ACT.action.GET_FENCES_END,fences};
         },
-        addFence:function(fence){//添加一个围栏
-            return {type:ACT.action.ADD_FENCE,fence};
+        addFenceStart:function(fence){//添加一个围栏
+            return {type:ACT.action.ADD_FENCE_START,fence};
+        },
+        addFenceSubmit:function(fence){
+            return function(dispatch){
+                let url="http://web.wisegps.cn/app/poi/?auth_code="+code;
+                let options={
+                    data:fence,
+                    dataType:'json',
+                    type:'post',
+                    timeout:10000,
+                    success:function(res){
+                        dispatch(ACT.fun.getFences([]));
+                    },
+                    error:function(xhr,type,errorThrow){
+                        console.log(type+'___url:'+url);
+                        dispatch(ACT.fun.addFenceFail());
+                    }
+                }
+                W.ajax(url,options);
+            }
+        },
+        addFenceFail:function(){
+            return {type:ACT.action.ADD_FENCE_FAIL};
         },
         deleteFence:function(fence){//删除一个围栏
-            return {type:ACT.action.DELETE_FENCE,fence};
+            return function(dispatch){
+                let url="http://web.wisegps.cn/app/poi/"+fence.poi_id+"?auth_code=" +code;
+                let options={
+                    data:null,
+                    dataType:'json',
+                    type:'DELETE',
+                    timeout:10000,
+                    success:function(res){
+                        dispatch(ACT.fun.getFences([]));
+                    },
+                    error:function(xhr,type,errorThrow){
+                        console.log(type+'___url:'+url);
+                    }
+                }
+                W.ajax(url,options);
+            }
         },
         updateFence:function(fence){//更新一个围栏
             return {type:ACT.action.UPDATE_FENCE,fence};
+        },
+        updateFenceSubmit:function(fence){
+            return function(dispatch){
+                let url='http://web.wisegps.cn/app/poi/'+fence.poi_id+'?auth_code='+code;
+                let data={
+                    poi_name:fence.poi_name,
+                    cust_id:fence.cust_id,
+                    poi_type:fence.poi_type,
+                    remark:fence.remark,
+                    lon:fence.lon, 
+                    lat:fence.lat,
+                    is_geo:1, 
+                    width:fence.width
+                }
+                let options={
+                    data:data,
+                    dataType:'json',
+                    type:"PUT",
+                    timeout:10000,
+                    success:function(res){
+                        dispatch(ACT.fun.getFences([]));
+                    },
+                    error:function(xhr,type,errorThrow){
+                        console.log(type+'___url:'+url);
+                    }
+                }
+                W.ajax(url,options);
+            }
         },
         selectFence:function(fence){//设置当前已选择的围栏
             return {type:ACT.action.SELECT_FENCE,fence};
@@ -141,7 +277,7 @@ export const ACT ={
 
 
 const AJAX=[
-    {//获取子用户
+    {//获取子用户 AJAX[0]
         "url":"http://web.wisegps.cn/app/customer/237/customer",
         "type":"GET",
         "dataType":"json",
@@ -153,7 +289,7 @@ const AJAX=[
         },
         "timeout":10000
     },
-    {//获取车辆
+    {//获取车辆 AJAX[1]
         "url":"http://web.wisegps.cn/app/customer/$user$/active_gps_data",
         "dataType":"json",
         "data":{
@@ -162,7 +298,7 @@ const AJAX=[
             "mode": "multi"
         }
     },
-    {//未读消息
+    {//未读消息 AJAX[2]
         "url":"http://web.wisegps.cn/app/customer/237/noti_unread2",
         "type":"GET",
         "dataType":"json",
@@ -173,7 +309,7 @@ const AJAX=[
         },
         "timeout":10000
     },
-    {//未读警告
+    {//未读警告 AJAX[3]
         "url":"http://web.wisegps.cn/app/customer/237/alert_unread",
         "type":"GET",
         "dataType":"json",
@@ -185,7 +321,7 @@ const AJAX=[
         },
         "timeout":10000
     },
-    {//兴趣点
+    {//获取兴趣点 AJAX[4]
         "url":"http://web.wisegps.cn/app/customer/237/poi",
         "type":"GET",
         "dataType":"json",
@@ -195,7 +331,7 @@ const AJAX=[
             "rand":0.9083654713010103
         }
     },
-    {//围栏
+    {//获取围栏 AJAX[5]
         "url":"http://web.wisegps.cn/app/customer/237/poi",
         "type":"GET",
         "dataType":"json",
@@ -203,6 +339,14 @@ const AJAX=[
             "auth_code":code,
             "is_geo":1,
             "rand":0.15131601312031773
+        }
+    },
+    {//更新兴趣点 AJAX[6]
+        "url":"http://web.wisegps.cn/app/poi/?auth_code="+code,
+        "type":"POST",
+        "dataType":"json",
+        "data":{
+            "is_geo":0,
         }
     }
 ]

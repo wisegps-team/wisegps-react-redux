@@ -42,22 +42,60 @@ WMap.prototype.addMarker=function(data){
     return marker;
 }
 
-//添加一个圆形，需要传入圆心经纬度lon,lat,半径r
-WMap.prototype.addCircle=function(data){
+//添加一个矩形，需要传入矩形中心经纬度lon,lat,半径r,描述desc
+WMap.prototype.addPolygon=function(data){
 	if(!data){return;}
 	var point = new BMap.Point(data.lon,data.lat);
-	var circle = new BMap.Circle(point,data.r,{strokeColor:"red", strokeWeight:2, strokeOpacity:0.5});
+	var rect = getRectangle(data.lon,data.lat, data.r);
+	var polygon = new BMap.Polygon([
+                    new BMap.Point(rect.x1, rect.y1),
+                    new BMap.Point(rect.x2, rect.y1),
+                    new BMap.Point(rect.x2, rect.y2),
+                    new BMap.Point(rect.x1, rect.y2)
+                ], {strokeColor: "#0000FF", strokeWeight: 2, strokeOpacity: 0.8});
+
 	var opts = {
 	  position : point,    // 指定文本标注所在的地理位置
 	}
 	var label = new BMap.Label(data.desc, opts);
+	label.setStyle({border:'solid 1px #0000FF'});
 	this.addOverlay(label); 
-	// this.addOverlay(circle);
+	this.addOverlay(polygon);
 	
-	// var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});//比例尺
-	// this.addControl(top_left_control); 
+	return {
+		polygon,
+		label,
+		show(){
+			polygon.show();
+			label.show();
+		},
+		hide(){
+			polygon.hide();
+			label.hide();
+		}
+	};
+}
 
-	return circle;
+////lon,lat: 中心点经纬度
+////meter: 半径，单位(米)
+var getRectangle = function (lon, lat, meter) {
+    var pi = 3.1415926535897932;
+    var ranx, rany;
+    var x, y;
+    y = lat;
+    x = 90 - y;
+    x = Math.sin(x * pi / 180);
+    x = 40075.38 * x;
+    x = x / 360;
+    x = x * 1000;
+    ranx = meter / x;
+    rany = meter / 110940;
+    return {
+        x1: lon - ranx,
+        y1: lat - rany,
+        x2: lon + ranx,
+        y2: lat + rany
+    };
 }
 
 //异步加载百度地图需要一个全局方法，以供类似jsonp方式的使用

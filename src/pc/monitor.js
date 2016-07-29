@@ -121,16 +121,20 @@ class App extends React.Component {
                             carClick={carClick}
                             hobbies={this.props.hobbies}
                             selected_hobby={this.props.selected_hobby}
+                            hobbyAct={hobbyAct}
                             fences={this.props.fences}
                             selected_fence={this.props.selected_fence}
+                            fenceAct={fenceAct}
+                            is_adding_hobby={this.props.is_adding_hobby}
+                            is_adding_fence={this.props.is_adding_fence}
                         />
                         <MapManager 
                             hobbies={this.props.hobbies} 
                             fences={this.props.fences} 
                             style={styles.manager} 
                             key='MapManager' 
-                            hobbyClick={hobbyClick}
-                            fenceClick={fenceClick}
+                            hobbyAct={hobbyAct}
+                            fenceAct={fenceAct}
                         />
                     </div>
                 </div>
@@ -158,28 +162,52 @@ function userClick(data,intent){
     }
 }
 
-function hobbyClick(data,intent){
+function hobbyAct(data,intent){
     switch(intent){
-        case 'add':
-            STORE.dispatch(ACT.fun.addHobby(data));
+        case 'add_start':
+            STORE.dispatch(ACT.fun.addHobbyStart());
+            break;
+        case 'add_submit':
+            STORE.dispatch(ACT.fun.addHobbySubmit(data));
+            break;
+        case 'add_cancel':
+            STORE.dispatch(ACT.fun.addHobbyFail());
+            break;
         case 'delete':
             STORE.dispatch(ACT.fun.deleteHobby(data));
+            break;
         case 'update':
             STORE.dispatch(ACT.fun.updateHobby(data));
             STORE.dispatch(ACT.fun.selectHobby(data));
+            break;
+        case 'update_submit':
+            STORE.dispatch(ACT.fun.updateHobbySubmit(data));
+            break;
         default:
             break;
     }
 }
-function fenceClick(data,intent){
+function fenceAct(data,intent){
     switch(intent){
-        case 'add':
-            STORE.dispatch(ACT.fun.addFence(data));
+        case 'add_start':
+            STORE.dispatch(ACT.fun.addFenceStart(data));
+            break;
+        case 'add_submit':
+            STORE.dispatch(ACT.fun.addFenceSubmit(data));
+            break;
+        case 'add_cancel':
+            STORE.dispatch(ACT.fun.addFenceFail());
+            break;
         case 'delete':
             STORE.dispatch(ACT.fun.deleteFence(data));
+            break;
         case 'update':
             STORE.dispatch(ACT.fun.updateFence(data));
             STORE.dispatch(ACT.fun.selectFence(data));
+            break;
+        case 'update_submit':
+            STORE.dispatch(ACT.fun.updateFenceSubmit(data));
+            break;
         default:
             break;
     }
