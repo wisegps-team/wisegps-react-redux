@@ -78,7 +78,7 @@ class Row extends Component {
         if(this.props.active){
             let Active=this.props.active;
             columns.push(<TableRowColumn {...this.props.columnProps} key={columns.length}>
-                <Active data={this.props.data} funProp={this.props.rowFun}/>
+                <Active data={this.props.data} fun={this.props.rowFun}/>
             </TableRowColumn>);
         }
         return (
