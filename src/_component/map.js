@@ -4,15 +4,15 @@ import React, {Component} from 'react';
 import WMap from '../_modules/WMap';
 import {getStatusDesc,getAllState} from '../_modules/car_state';
 
-
+const cust_id=237
 class Map extends Component {
     constructor(props){
         super(props);
         this.mapinit = this.mapinit.bind(this);
         this.state={
-            hobbies_view:[],
+            hobby_views:[],
             selected_hobby:{},
-            fences_view:[],
+            fence_views:[],
             selected_fence:{}
         }
     }
@@ -26,6 +26,7 @@ class Map extends Component {
     }
 
     componentWillReceiveProps(nextProps) {//收到新props
+        //---------判断是否车辆数据的改变-------------
         if(nextProps.cars.length!=this.props.cars.length){
             let view=nextProps.cars.map(function (ele) {
                 return new WMap.Point(ele.active_gps_data.b_lon, ele.active_gps_data.b_lat);
@@ -33,67 +34,155 @@ class Map extends Component {
             this.map.setViewport(view);//设置合适的层级大小
         }
 
-        if(this.props.hobbies.length==0&&nextProps.hobbies.length>0){
-            let hobbies_view=nextProps.hobbies.map(item=>{
-                let obj={}
+        //-------以下是判断是否有兴趣点数据改变-----------
+
+        //正在添加兴趣点
+        if(nextProps.is_adding_hobby&&!this.props.is_adding_hobby){
+            alert("请在地图上选择兴趣点的位置！");
+            let _this=this;
+            this.map.addEventListener('click',addHobby);
+            
+            function addHobby(e){
+                let info_window=getHobbyWindow(0,{},_this.props.hobbyAct,funClose,e.point.lng,e.point.lat);
+                var infoWindow = new WMap.InfoWindow(info_window);  // 创建信息窗口对象
+                _this.map.openInfoWindow(infoWindow,e.point);
+                
+                infoWindow.addEventListener('close',function(){
+                    _this.map.removeEventListener('click',addHobby);
+                    _this.props.hobbyAct({},'add_cancel');
+                });
+
+                function funClose(){
+                    _this.map.closeInfoWindow();
+                }
+            }
+        }
+
+        //兴趣点已增加或已删除
+        if(this.props.hobbies.length!=nextProps.hobbies.length){
+            if(this.props.hobbies.length!=0)this.state.hobby_views.map(ele=>{ele.view.hide();});
+            let hobby_views=nextProps.hobbies.map(item=>{
+                let obj={};
                 obj.id=item._id;
                 obj.view=this.addPoint(item.rev_lon,item.rev_lat,item.poi_name);
                 item.visible?obj.view.show():obj.view.hide();
                 return obj;
             });
             this.setState({
-                hobbies_view:hobbies_view,
-                selected_hobby:nextProps.selected_hobby
+                hobby_views:hobby_views,
+                selected_hobby:Object.assign({}, nextProps.selected_hobby)
             });
         }
+        
         let old_hobby=this.state.selected_hobby;
         let new_hobby=Object.assign({}, nextProps.selected_hobby);
         let str_old_hobby=JSON.stringify(old_hobby);
         let str_new_hobby=JSON.stringify(new_hobby);
+
+        //兴趣点已修改更新，名称备注的更新不需要在此处操作，此处操作显示和弹出框
         if(str_new_hobby!=str_old_hobby){
-            this.map.moveTo(new_hobby.rev_lon,new_hobby.rev_lat);
-            console.log('hobbies changed');
-            if(str_old_hobby=="{}"&&str_new_hobby!="{}"){//add
-                let target=this.state.hobbies_view.filter(ele=>ele.id==new_hobby._id);
-                target[0].view.show();
-            }else if(str_old_hobby!="{}"&&str_new_hobby=="{}"){//delete
-                let target=this.state.hobbies_view.filter(ele=>ele.id==new_hobby._id);
-            }else{//update
-                let target=this.state.hobbies_view.filter(ele=>ele.id==new_hobby._id);
-                new_hobby.visible?target[0].view.show():target[0].view.hide();
+            let hobby_view=this.state.hobby_views.filter(ele=>ele.id==new_hobby._id)[0].view;//hobby_view是该兴趣点对应的state中的view
+            if(new_hobby.visible){//兴趣点显示
+                this.map.moveTo(new_hobby.rev_lon,new_hobby.rev_lat);
+                hobby_view.show();
+            }else if(!new_hobby.visible){
+                hobby_view.hide();
             }
-            this.setState({selected_hobby:new_hobby});
-        }
         
-        if(this.props.fences.length==0&&nextProps.fences.length>0){
-            let fences_view=nextProps.fences.map(item=>{
-                let obj={}
+            if(new_hobby.show_info_window){//是否弹出编辑框,正在添加或修改兴趣点的时候弹出
+                let div_hobby_window=getHobbyWindow(0,new_hobby,this.props.hobbyAct,funClose,new_hobby.lon,new_hobby.lat);
+                let hobby_window=new WMap.InfoWindow(div_hobby_window);
+                let hobby_window_point=new WMap.Point(new_hobby.rev_lon,new_hobby.rev_lat);
+
+                hobby_view.openInfoWindow(hobby_window,hobby_window_point);
+
+                let _this=this;
+                hobby_window.addEventListener('close',(e)=>{
+                    new_hobby.show_info_window=false;
+                    this.props.hobbyAct(new_hobby,'update');
+                });
+                function funClose(){
+                    _this.map.closeInfoWindow();
+                }
+            }else if(!new_hobby.show_info_window){
+                this.map.closeInfoWindow();
+            }
+
+            this.setState({selected_hobby:Object.assign({}, new_hobby)});
+        }
+
+        //------以下是围栏数据是否改变------
+
+        //正在添加围栏
+        if(nextProps.is_adding_fence&&!this.props.is_adding_fence){
+            alert("请在地图上选择围栏的位置！");
+            let _this=this;
+            this.map.addEventListener('click',addfence);
+            
+            function addfence(e){
+                let info_window=getHobbyWindow(1,{},_this.props.fenceAct,funClose,e.point.lng,e.point.lat);
+                var infoWindow = new WMap.InfoWindow(info_window);  // 创建信息窗口对象
+                _this.map.openInfoWindow(infoWindow,e.point);
+                
+                infoWindow.addEventListener('close',function(){
+                    _this.map.removeEventListener('click',addfence);
+                    _this.props.fenceAct({},'add_cancel');
+                });
+
+                function funClose(){
+                    _this.map.closeInfoWindow();
+                }
+            }
+        }
+
+        //围栏已添加或已删除
+        if(this.props.fences.length!=nextProps.fences.length){
+            if(this.props.hobbies.length!=0)this.state.fence_views.map(ele=>{ele.view.hide();});
+            let fence_views=nextProps.fences.map(item=>{
+                let obj={};
                 obj.id=item._id;
-                obj.view=this.addPoint(item.rev_lon,item.rev_lat,item.poi_name);
+                obj.view=this.addFencePolygon(item.rev_lon,item.rev_lat,item.width,item.poi_name);
                 item.visible?obj.view.show():obj.view.hide();
                 return obj;
             });
             this.setState({
-                fences_view:fences_view,
-                selected_fence:nextProps.selected_fence
+                fence_views:fence_views,
+                selected_fence:Object.assign({},nextProps.selected_fence)
             });
         }
+        
         let old_fence=this.state.selected_fence;
         let new_fence=Object.assign({}, nextProps.selected_fence);
         let str_old_fence=JSON.stringify(old_fence);
         let str_new_fence=JSON.stringify(new_fence);
+
+        //围栏已修改
         if(str_new_fence!=str_old_fence){
-            this.map.moveTo(new_fence.rev_lon,new_fence.rev_lat);
-            console.log('fences changed');
-            if(str_old_fence=="{}"&&str_new_fence!="{}"){//add
-                let target=this.state.fences_view.filter(ele=>ele.id==new_fence._id);
-            }else if(str_old_fence!="{}"&&str_new_fence=="{}"){//delete
-                let target=this.state.fences_view.filter(ele=>ele.id==new_fence._id);
-            }else{//update
-                let target=this.state.fences_view.filter(ele=>ele.id==new_fence._id);
-                new_fence.visible?target[0].view.show():target[0].view.hide();
+            let fence_view=this.state.fence_views.filter(ele=>ele.id==new_fence._id)[0].view;
+
+            if(new_fence.visible){
+                this.map.centerAndZoom(new WMap.Point( new_fence.rev_lon,new_fence.rev_lat),getZoom(new_fence.width));
+                fence_view.show();
+            }else if(!new_fence.visible){
+                fence_view.hide();
             }
-            this.setState({selected_fence:new_fence});
+                if(new_fence.show_info_window){
+                    let div_fence_window=getHobbyWindow(1,new_fence,this.props.fenceAct,funClose,new_fence.lon,new_fence.lat);
+                    let fence_window=new WMap.InfoWindow(div_fence_window);
+                    let fence_window_point=new WMap.Point(new_fence.rev_lon,new_fence.rev_lat);
+
+                    this.map.openInfoWindow(fence_window,fence_window_point);
+
+                    fence_window.addEventListener('close',funClose);
+                    let _this=this;
+                    function funClose(){
+                        new_fence.show_info_window=false;
+                        _this.props.fenceAct(new_fence,'update');
+                    }
+                }else if(!new_fence.show_info_window){
+                    this.map.closeInfoWindow();
+                }
+            this.setState({selected_fence:Object.assign({}, new_fence)});
         }
 
     }
@@ -121,16 +210,16 @@ class Map extends Component {
             lat:lat,
             desc:str
         });
-        return marker
+        return marker;
     }
-    addFence(lon,lat,r,str){
-        this.circle=this.map.addCircle({
+    addFencePolygon(lon,lat,r,str){
+        let poligon=this.map.addPolygon({
             lon:lon,
             lat:lat,
             r:r,
             desc:str
         });
-        this.map.addOverlay(this.circle);
+        return poligon;
     }
 
     render() {
@@ -308,11 +397,161 @@ function info(data,thisCar) {
     return div;
 }
 
+function getHobbyWindow(is_geo,hobby,funSubmit,funClose,lon,lat){
+    let div=document.createElement('div');
+    div.style='font-size:14px; width: auto; height: auto;';
+    //div.innerHTML='<div style="height:150px;overflow:hidden;"><div><div>编辑兴趣点</div><table cellpadding="0" cellspacing="0" border="0"><tbody><tr><td style="height:35px;" align="right">名称: </td><td align="left"><input style="width:140px;" id="poi_name" type="text" value="'+ hobby.poi_name+'"/></td></tr><tr><td style="height:35px;" align="right">备注: </td><td align="left"><input style="width:140px;" id="remark" type="text" value="'+ hobby.remark +'"/></td></tr></tbody></table></div><div style="text-align: center"><button>保存</button><button>取消</button></div></div>';
 
+    let title=document.createElement('div');
+    if(hobby._id){
+        title.innerHTML=is_geo?"编辑围栏":"编辑兴趣点";
+    }else{
+        title.innerHTML=is_geo?"添加围栏":"添加兴趣点";
+    }
 
+    let str_name=document.createElement('span');
+    str_name.innerHTML="名称：";
+    
+    let input_name=document.createElement('input');
+    input_name.style='width:140px';
+    input_name.value=hobby.poi_name||"";
 
+    let name_box=document.createElement('div');
+    name_box.style='margin-top:10px';
+    name_box.appendChild(str_name);
+    name_box.appendChild(input_name);
 
+    let str_type=document.createElement('span');
+    str_type.innerHTML="类别：";
 
+    let input_type=document.createElement('select');
+    input_type.style='width:144px';
+    input_type.innerHTML='<option value="1">一般建筑</option><option value="2">金融机构</option><option value="3">休闲娱乐</option><option value="4">加油站</option><option value="5">医疗机构</option><option value="6">科研教育</option><option value="7">企事业单位</option><option value="8">收费站</option>';
+
+    let type_box=document.createElement('div');
+    type_box.style='margin-top:10px';
+    type_box.appendChild(str_type);
+    type_box.appendChild(input_type);
+
+    let str_remark=document.createElement('span');
+    str_remark.innerHTML="备注：";
+
+    let input_remark=document.createElement('input');
+    input_remark.style='width:140px';
+    input_remark.value=hobby.remark||"";
+
+    let remark_box=document.createElement('div');
+    remark_box.style='margin-top:10px';
+    remark_box.appendChild(str_remark);
+    remark_box.appendChild(input_remark);
+
+    let str_width=document.createElement('span');
+    str_width.innerHTML="宽度：";
+
+    let input_width=document.createElement('input');
+    input_width.style='width:140px';
+    input_width.value=hobby.width||0;
+
+    let width_box=document.createElement('div');
+    width_box.style='margin-top:10px';
+    width_box.appendChild(str_width);
+    width_box.appendChild(input_width);
+
+    let submit_btn=document.createElement('button');
+    submit_btn.innerHTML="保存";
+    submit_btn.onclick=function(){
+        hobby.poi_name=input_name.value;
+        hobby.remark=input_remark.value;
+        hobby.poi_type=Number(input_type.value);
+        hobby.width=Number(input_width.value);
+
+        if(hobby._id){//_id 存在，说明是对已存在的hobby进行修改
+            funSubmit(hobby,'update_submit');
+            funClose();
+        }else{//_id 不存在，说明是新增一个hobby
+            hobby.cust_id=cust_id;
+            hobby.lon=lon;
+            hobby.lat=lat;
+            hobby.is_geo=is_geo;
+
+            funSubmit(hobby,'add_submit');
+            funClose();
+        }
+    }
+
+    let cancel_btn=document.createElement('button');
+    cancel_btn.innerHTML="取消";
+    cancel_btn.style='margin-left:10px';
+    cancel_btn.onclick=function(){
+        hobby.show_info_window=false;
+        if(hobby._id){//_id存在的时候取消，取消对hobby的修改
+            funSubmit(hobby,'update');//即使取消修改，也有提交，不过是提交到state，取消其显示弹窗，不提交到服务器
+            funClose();
+        }else{// _id不存在，取消新增hobby
+            funSubmit('add_cancel');
+            funClose();
+        }
+    }
+
+    let btn_box=document.createElement('div');
+    btn_box.style="text-align:center; display:block; width:100%; margin-top:10px";
+    btn_box.appendChild(submit_btn);
+    btn_box.appendChild(cancel_btn);
+
+    div.appendChild(title);
+    div.appendChild(name_box);
+    is_geo?div.appendChild(width_box):div.appendChild(type_box);
+    div.appendChild(remark_box);
+    div.appendChild(btn_box);
+    return div;
+}
+
+class HobbyWindow extends Component{
+    constructor(props){
+        super(props);
+    }
+    render(){
+        return(
+            <div style={{fontSize:"14px",width:"auto",height:"auto"}}>
+                <div style={{height:"150px",overflow:"hidden"}}>
+                    <div>
+                        <div>编辑兴趣点</div>
+                        <table cellpadding="0" cellspacing="0" border="0">
+                            <tbody>
+                                <tr>
+                                    <td style={{height:"35px"}} align="right">名称: </td>
+                                    <td align="left">
+                                        <input style={{width:"140px"}} type="text"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{height:"35px"}} align="right">备注: </td>
+                                    <td align="left">
+                                        <input style={{width:"140px"}} type="text"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style={{textAlign: "center"}}>
+                        <button>保存</button>
+                        <button>取消</button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+}
+
+function getZoom(width){
+    var zooms = ["20","50","100","200","500","1000","2000","5000","10000","20000","25000","50000","100000","200000","500000","1000000","2000000"]
+    let zoom=15;
+    for(let i=0;i<=16;i++){
+        zoom=19-i;
+        if(width<=zooms[i])break;
+    }
+    return zoom;
+}
 
 
 
