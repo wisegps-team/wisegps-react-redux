@@ -34,55 +34,55 @@ const styles={
     }
 }
 
-const hobbies=[
-    {
-        name:'兴趣点1',
-        remark:'备注1',
-        lon:'107',
-        lat:'26',
-        visible:false
-    },
-    {
-        name:'兴趣点2',
-        remark:'备注2',
-        lon:'107',
-        lat:'27',
-        visible:false
-    },
-    {
-        name:'兴趣点3',
-        remark:'备注3',
-        lon:'107',
-        lat:'28',
-        visible:false
-    }
-]
-const fences=[
-    {
-        poi_name:'围栏1',
-        remark:'fence1',
-        center_lon:'106',
-        center_lat:'27',
-        r:'5000',
-        visible:false
-    },
-    {
-        poi_name:'围栏2',
-        remark:'fence2',
-        center_lon:'107',
-        center_lat:'27',
-        r:'10000',
-        visible:false
-    },
-    {
-        poi_name:'围栏3',
-        remark:'fence3',
-        center_lon:'108',
-        center_lat:'27',
-        r:'15000',
-        visible:false
-    }
-]
+// const hobbies=[
+//     {
+//         name:'兴趣点1',
+//         remark:'备注1',
+//         lon:'107',
+//         lat:'26',
+//         visible:false
+//     },
+//     {
+//         name:'兴趣点2',
+//         remark:'备注2',
+//         lon:'107',
+//         lat:'27',
+//         visible:false
+//     },
+//     {
+//         name:'兴趣点3',
+//         remark:'备注3',
+//         lon:'107',
+//         lat:'28',
+//         visible:false
+//     }
+// ]
+// const fences=[
+//     {
+//         poi_name:'围栏1',
+//         remark:'fence1',
+//         center_lon:'106',
+//         center_lat:'27',
+//         r:'5000',
+//         visible:false
+//     },
+//     {
+//         poi_name:'围栏2',
+//         remark:'fence2',
+//         center_lon:'107',
+//         center_lat:'27',
+//         r:'10000',
+//         visible:false
+//     },
+//     {
+//         poi_name:'围栏3',
+//         remark:'fence3',
+//         center_lon:'108',
+//         center_lat:'27',
+//         r:'15000',
+//         visible:false
+//     }
+// ]
 
 const columnProps={
     style:styles.td
@@ -112,7 +112,10 @@ class MapManager extends Component {
         });
     }
     addHobby(){
-        alert('add Hobby');
+        this.props.hobbyAct({},'add_start');
+    }
+    addFence(){
+        this.props.fenceAct({},'add_start');
     }
     pageChange(value){
         alert('切到第'+value+'页');
@@ -126,7 +129,7 @@ class MapManager extends Component {
                 >
                     <Tab label={___.poi} value="a" style={styles.tab}>
                         <div style={styles.div}>
-                        <a onClick={this.addHobby.bind(this)} style={styles.a}><span>添加兴趣点</span></a>
+                        <a onClick={this.addHobby.bind(this)} style={styles.a}><span>{___.add_hobby}</span></a>
                             <WTable 
                                 data={this.props.hobbies} 
                                 keys={[{name:___.name,key:'poi_name'},{name:___.remark,key:'remark'},{name:___.operation}]} 
@@ -140,19 +143,19 @@ class MapManager extends Component {
                                 rowProps={rowProps}
                                 headerProps={headerProps}
                                 
-                                rowFun={this.props.hobbyClick}
+                                rowFun={this.props.hobbyAct}
                             />
                         </div>
                     </Tab>
                     <Tab label={___.geo} value="b" style={styles.tab}>
                         <div style={styles.div}>
-                        <a style={styles.a}><span>添加围栏</span></a>
+                        <a style={styles.a} onClick={this.addFence.bind(this)} ><span>{___.add_fence}</span></a>
                             <WTable 
                                 data={this.props.fences} 
-                                keys={[{name:___.name,key:'poi_name'},{name:___.range,key:'remark'},{name:___.operation}]} 
+                                keys={[{name:___.name,key:'poi_name'},{name:___.range,key:'width'},{name:___.operation}]} 
                                 active={Active1}
 
-                                rowFun={this.props.fenceClick}
+                                rowFun={this.props.fenceAct}
                             />
                         </div>
                     </Tab>
@@ -165,32 +168,28 @@ class MapManager extends Component {
 class Active1 extends Component{
     constructor(props) {
         super(props);
-        // this.create = this.create.bind(this);
-        // this.delete = this.delete.bind(this);
     }
-    
     edit(){
-        alert('编辑['+this.props.data.poi_name+']');
-    }
-
-    delete(){
-        alert('删除['+this.props.data.poi_name+']');
-    }
-
-    show(){
-        // alert('显示['+this.props.data.poi_name+']');
         let obj=this.props.data;
         obj.visible=true;
-        this.props.funProp(obj,'update');
+        obj.show_info_window=true;
+        this.props.fun(obj,'update');
     }
-
+    delete(){
+        if(confirm('确定删除['+this.props.data.poi_name+']?')){
+            this.props.fun(this.props.data,'delete');
+        }
+    }
+    show(){
+        let obj=this.props.data;
+        obj.visible=true;
+        this.props.fun(obj,'update');
+    }
     hide(){
-        // alert('隐藏['+this.props.data.poi_name+']');
         let obj=this.props.data;
         obj.visible=false;
-        this.props.funProp(obj,'update');
+        this.props.fun(obj,'update');
     }
-
     render() {
         let showOrHide=this.props.data.visible?(<ActionVisibility onClick={this.hide.bind(this)} style={styles.icon}/>):(<ActionVisibilityOff onClick={this.show.bind(this)} style={styles.icon}/>);
         return (
