@@ -24,5 +24,7 @@ window.___={
 	'name':'名称',
 	'remark':'备注',
 	'operation':'操作',
-	'range':'范围'
+	'range':'范围',
+	'add_hobby':'添加兴趣点',
+	'add_fence':'添加围栏'
 }
